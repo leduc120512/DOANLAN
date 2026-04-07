@@ -54,6 +54,13 @@ app.use(async (req, res, next) => {
     // User & Cart
     res.locals.user = req.session.user || null;
     res.locals.cart = req.session.cart || [];
+    res.locals.slugify = (value) =>
+      String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
     res.locals.searchHistory = Array.isArray(req.session.searchHistory)
       ? req.session.searchHistory
       : [];

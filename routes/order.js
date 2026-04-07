@@ -345,4 +345,9 @@ router.post("/:productId/comment", isAuthenticated, async (req, res) => {
   }
 });
 
+router.post("/:productId/review", isAuthenticated, async (req, res) => {
+  req.url = `/${req.params.productId}/comment`;
+  return router.handle(req, res, () => {});
+});
+
 module.exports = router;

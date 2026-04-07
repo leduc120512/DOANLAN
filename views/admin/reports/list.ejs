@@ -1,0 +1,50 @@
+<div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="flex items-center justify-between gap-4 mb-8">
+    <h1 class="text-3xl font-bold text-blue-700">Báo cáo sản phẩm</h1>
+    <a href="/admin" class="text-blue-600 font-semibold hover:underline">Quay lại dashboard</a>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-gray-50 text-gray-600 uppercase text-sm">
+          <tr>
+            <th class="px-6 py-4">Sản phẩm</th>
+            <th class="px-6 py-4">Người gửi</th>
+            <th class="px-6 py-4">Lý do</th>
+            <th class="px-6 py-4">Chi tiết</th>
+            <th class="px-6 py-4">Trạng thái</th>
+            <th class="px-6 py-4">Ngày gửi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (reports && reports.length > 0) { %>
+            <% reports.forEach(report => { %>
+              <tr class="border-t">
+                <td class="px-6 py-4">
+                  <div class="font-semibold text-gray-900"><%= report.product?.name || 'Sản phẩm đã xóa' %></div>
+                </td>
+                <td class="px-6 py-4 text-gray-700">
+                  <div><%= report.user?.fullName || 'Khách hàng' %></div>
+                  <div class="text-sm text-gray-500"><%= report.user?.email || '' %></div>
+                </td>
+                <td class="px-6 py-4 text-gray-700"><%= report.reason %></td>
+                <td class="px-6 py-4 text-gray-600 max-w-md"><%= report.details || '---' %></td>
+                <td class="px-6 py-4">
+                  <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold <%= report.status === 'Resolved' ? 'bg-green-100 text-green-700' : report.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' %>"><%= report.status %></span>
+                </td>
+                <td class="px-6 py-4 text-gray-600">
+                  <%= report.createdAt ? new Date(report.createdAt).toLocaleString('vi-VN') : '---' %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" class="px-6 py-12 text-center text-gray-500">Chưa có báo cáo nào</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

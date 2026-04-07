@@ -7,6 +7,7 @@ const Category = require("../models/Category");
 const Order = require("../models/Order");
 const Banner = require("../models/Banner");
 const Coupon = require("../models/Coupon");
+const ProductReport = require("../models/ProductReport");
 
 // Dashboard admin
 router.get("/", isAdmin, async (req, res) => {
@@ -16,6 +17,7 @@ router.get("/", isAdmin, async (req, res) => {
     const totalCategories = await Category.countDocuments();
     const totalBanners = await Banner.countDocuments();
     const totalCoupons = await Coupon.countDocuments();
+    const totalReports = await ProductReport.countDocuments();
     const totalRevenue = await Order.aggregate([
       {
         $group: {
@@ -33,6 +35,7 @@ router.get("/", isAdmin, async (req, res) => {
         totalCategories,
         totalBanners,
         totalCoupons,
+        totalReports,
         totalRevenue: totalRevenue[0]?.total || 0,
       },
     });
@@ -191,6 +194,22 @@ router.post("/products/:id/delete", isAdmin, async (req, res) => {
   await Product.findByIdAndDelete(req.params.id);
 
   res.redirect("/admin/products?success=delete");
+});
+
+router.get("/reports", isAdmin, async (req, res) => {
+  try {
+    const reports = await ProductReport.find()
+      .populate("product", "name image slug")
+      .populate("user", "fullName email")
+      .sort({ createdAt: -1 });
+
+    res.render("admin/reports/list", {
+      title: "Báo cáo sản phẩm",
+      reports,
+    });
+  } catch (error) {
+    res.status(500).render("error", { message: error.message });
+  }
 });
 // ========== QUẢN LÝ DANH MỤC ==========
 

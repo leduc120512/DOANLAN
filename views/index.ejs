@@ -36,7 +36,7 @@
                     <p class="text-sm md:text-base uppercase tracking-wide mb-2">Sản phẩm nổi bật</p>
                     <h1 class="text-2xl md:text-4xl font-bold mb-3"><%= product.name %></h1>
                     <p class="text-sm md:text-lg mb-5 line-clamp-2"><%= product.description %></p>
-                    <a href="/product/<%= product._id %>" class="btn-primary">Xem sản phẩm</a>
+                    <a href="/product/<%= slugify(product.name) %>-<%= product._id %>" class="btn-primary">Xem sản phẩm</a>
                   </div>
                 </div>
               </div>
@@ -78,8 +78,13 @@
       <% if (topProducts && topProducts.length > 0) { %> <%
       topProducts.forEach(product => { %>
       <% const displayImage = (product.images && product.images.length > 0) ? product.images[0] : product.image; %>
+      <% const productUrl = `/product/${slugify(product.name)}-${product._id}`; %>
       <div
-        class="bg-white rounded-lg shadow-lg hover:shadow-xl transition overflow-hidden"
+        class="bg-white rounded-lg shadow-lg hover:shadow-xl transition overflow-hidden cursor-pointer group"
+        role="link"
+        tabindex="0"
+        onclick="window.location.href='<%= productUrl %>'"
+        onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='<%= productUrl %>'; }"
       >
         <div class="bg-gray-200 h-64 flex items-center justify-center">
           <% if (displayImage) { %>
@@ -93,7 +98,7 @@
           <% } %>
         </div>
         <div class="p-4">
-          <h3 class="font-bold text-lg mb-2"><%= product.name %></h3>
+          <h3 class="font-bold text-lg mb-2 group-hover:text-blue-700 transition"><%= product.name %></h3>
           <p class="text-gray-600 text-sm mb-3 line-clamp-2">
             <%= product.description %>
           </p>
@@ -106,14 +111,9 @@
             >
           </div>
           <div class="flex gap-2">
-            <a
-              href="/product/<%= product._id %>"
-              class="flex-1 btn-primary text-center"
-              >Chi tiết</a
-            >
             <button
               class="flex-1 btn-secondary"
-              onclick="addToCart('<%= product._id %>')"
+              onclick="event.stopPropagation(); addToCart('<%= product._id %>')"
             >
               Thêm
             </button>

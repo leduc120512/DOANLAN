@@ -210,6 +210,44 @@
         </p>
       </div>
     <% } %>
+
+    <div class="mt-10 pt-8 border-t border-gray-200">
+      <div class="flex items-center justify-between gap-4 mb-4">
+        <h3 class="text-xl font-bold text-gray-800">Báo cáo sản phẩm</h3>
+        <span class="text-sm text-gray-500">Gửi khi có thông tin sai hoặc cần kiểm tra</span>
+      </div>
+
+      <% if (user && user._id) { %>
+        <form id="reportForm" class="grid grid-cols-1 gap-4 md:grid-cols-2" onsubmit="submitProductReport(event, '<%= product._id %>')">
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Lý do báo cáo</label>
+            <select id="reportReason" name="reason" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+              <option value="">Chọn lý do</option>
+              <option value="Thông tin sai">Thông tin sai</option>
+              <option value="Hình ảnh không đúng">Hình ảnh không đúng</option>
+              <option value="Chất lượng kém">Chất lượng kém</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Ghi chú thêm</label>
+            <input id="reportDetails" name="details" type="text" placeholder="Mô tả ngắn gọn vấn đề" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+          </div>
+          <div class="md:col-span-2">
+            <button type="submit" id="submitReportBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition disabled:opacity-60">
+              Gửi báo cáo
+            </button>
+          </div>
+        </form>
+      <% } else { %>
+        <div class="bg-red-50 border border-red-100 rounded-xl p-6 text-center">
+          <p class="text-gray-700">
+            <a href="/auth/login" class="text-red-600 font-bold hover:underline">Đăng nhập</a>
+            để gửi báo cáo sản phẩm.
+          </p>
+        </div>
+      <% } %>
+    </div>
   </div>
 </div>
 
@@ -324,7 +362,7 @@ async function buyNow(productId) {
     btn.textContent = 'Đang gửi...';
 
     try {
-      const res = await fetch(`/product/${productId}/review`, {  // sửa endpoint hợp lý hơn
+      const res = await fetch(`/order/${productId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating: parseInt(rating), text })
@@ -343,6 +381,44 @@ async function buyNow(productId) {
     } finally {
       btn.disabled = false;
       btn.textContent = 'Gửi đánh giá';
+    }
+  }
+
+  async function submitProductReport(event, productId) {
+    event.preventDefault();
+
+    const btn = document.getElementById('submitReportBtn');
+    const reason = document.getElementById('reportReason').value;
+    const details = document.getElementById('reportDetails').value.trim();
+
+    if (!reason) {
+      notify('Vui lòng chọn lý do báo cáo', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Đang gửi...';
+
+    try {
+      const res = await fetch(`/product/${productId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, details })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        notify('Đã gửi báo cáo của bạn', 'success');
+        document.getElementById('reportForm').reset();
+      } else {
+        notify(data.error || 'Không thể gửi báo cáo', 'error');
+      }
+    } catch (error) {
+      notify('Lỗi kết nối, vui lòng thử lại sau', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Gửi báo cáo';
     }
   }
 </script>
