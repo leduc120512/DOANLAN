@@ -1,0 +1,179 @@
+<div class="py-8">
+    <h1 class="text-4xl font-bold mb-8 text-blue-600">Thanh toán</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Checkout Form -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <h2 class="text-2xl font-bold mb-6 text-blue-600">Thông tin giao hàng</h2>
+          
+          <form id="checkoutForm">
+            <div class="mb-4">
+              <label class="block text-gray-700 font-bold mb-2">Tên người nhận</label>
+              <input type="text" id="customerName" value="<%= user.fullName %>" class="w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-600" required>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-gray-700 font-bold mb-2">Số điện thoại</label>
+              <input type="tel" id="customerPhone" value="<%= user.phone %>" class="w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-600" required>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-gray-700 font-bold mb-2">Địa chỉ giao hàng</label>
+              <textarea id="customerAddress" class="w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-600 h-24" required><%= user.address %></textarea>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-gray-700 font-bold mb-2">Mã giảm giá (nếu có)</label>
+              <div class="flex gap-2">
+                <input type="text" id="couponCode" placeholder="Nhập mã giảm giá" class="flex-1 px-4 py-2 border-2 border-blue-200 rounded-lg uppercase">
+                <button type="button" onclick="applyCoupon()" class="btn-secondary">Áp dụng</button>
+              </div>
+              <p id="couponMessage" class="mt-2 text-sm"></p>
+            </div>
+
+            <button type="button" onclick="checkout()" class="w-full btn-primary text-lg font-bold py-3">Xác nhận đơn hàng</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div>
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 sticky top-20">
+          <h2 class="text-2xl font-bold mb-6 text-blue-600">Tóm tắt đơn hàng</h2>
+          
+          <div class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+            <% cart.forEach(item => { %>
+              <div class="flex justify-between pb-3 border-b">
+                <div>
+                  <p class="font-bold"><%= item.name %></p>
+                  <p class="text-gray-600 text-sm">x<%= item.quantity %></p>
+                </div>
+                <p class="font-bold"><%= (item.price * item.quantity).toLocaleString() %>₫</p>
+              </div>
+            <% }); %>
+          </div>
+
+          <div class="space-y-3 border-t pt-4">
+            <div class="flex justify-between">
+              <span>Tổng sản phẩm:</span>
+              <span class="font-bold"><%= cart.reduce((sum, item) => sum + item.quantity, 0) %></span>
+            </div>
+            <div class="flex justify-between">
+              <span>Tạm tính:</span>
+              <span id="subtotalAmount" class="font-bold"><%= total.toLocaleString() %>₫</span>
+            </div>
+            <div class="flex justify-between text-green-600">
+              <span>Giảm giá:</span>
+              <span id="discountAmount" class="font-bold">0₫</span>
+            </div>
+            <div class="flex justify-between text-xl font-bold text-blue-600">
+              <span>Thành tiền:</span>
+              <span id="finalTotalAmount"><%= total.toLocaleString() %>₫</span>
+            </div>
+          </div>
+
+          <a href="/cart" class="block mt-6 w-full btn-secondary text-center">Quay lại giỏ hàng</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ <script>
+  let appliedCouponCode = null;
+  let currentFinalTotal = <%= total %>;
+
+  function formatVND(value) {
+    return Number(value || 0).toLocaleString('vi-VN') + '₫';
+  }
+
+  async function applyCoupon() {
+    const couponCode = document.getElementById('couponCode').value.trim();
+    const couponMessage = document.getElementById('couponMessage');
+
+    if (!couponCode) {
+      couponMessage.textContent = 'Vui lòng nhập mã giảm giá';
+      couponMessage.className = 'mt-2 text-sm text-red-600';
+      return;
+    }
+
+    try {
+      const res = await fetch('/order/validate-coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ couponCode })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        appliedCouponCode = data.code;
+        currentFinalTotal = data.finalPrice;
+
+        document.getElementById('discountAmount').textContent = '-' + formatVND(data.discountAmount);
+        document.getElementById('finalTotalAmount').textContent = formatVND(data.finalPrice);
+
+        couponMessage.textContent = 'Áp dụng mã thành công: ' + data.code;
+        couponMessage.className = 'mt-2 text-sm text-green-600';
+        notify('Áp dụng mã giảm giá thành công', 'success');
+      } else {
+        appliedCouponCode = null;
+        currentFinalTotal = <%= total %>;
+
+        document.getElementById('discountAmount').textContent = '0₫';
+        document.getElementById('finalTotalAmount').textContent = formatVND(<%= total %>);
+
+        couponMessage.textContent = data.error || 'Mã giảm giá không hợp lệ';
+        couponMessage.className = 'mt-2 text-sm text-red-600';
+        notify(data.error || 'Mã giảm giá không hợp lệ', 'error');
+      }
+    } catch (error) {
+      couponMessage.textContent = 'Không thể kiểm tra mã giảm giá';
+      couponMessage.className = 'mt-2 text-sm text-red-600';
+      notify('Lỗi kết nối server', 'error');
+    }
+  }
+
+  function checkout() {
+    const customerName  = document.getElementById('customerName').value;
+    const customerPhone = document.getElementById('customerPhone').value;
+    const customerAddress = document.getElementById('customerAddress').value;
+
+    if (!customerName || !customerPhone || !customerAddress) {
+      notify('Vui lòng nhập đầy đủ thông tin', 'error');
+      return;
+    }
+
+    fetch('/order/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        customerName,
+        customerPhone,
+        customerAddress,
+        couponCode: appliedCouponCode || document.getElementById('couponCode').value.trim()
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        notify('Đơn hàng đã được tạo thành công', 'success');
+        setTimeout(() => {
+          window.location.href = `/order/${data.orderId}`;   // ← sửa ở đây
+          // hoặc: window.location.href = "/order/" + data.orderId;
+        }, 1500);
+      } else {
+        notify(data.error || 'Có lỗi xảy ra', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      notify('Lỗi kết nối server', 'error');
+    });
+  }
+</script>
+</div>

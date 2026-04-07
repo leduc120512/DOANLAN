@@ -1,0 +1,196 @@
+<div class="py-8">
+  <h1 class="text-4xl font-bold mb-8 text-blue-600">
+    Chi tiết đơn hàng #
+    <%= order._id ? order._id.toString().slice(-8).toUpperCase() : '' %>
+  </h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- LEFT SIDE -->
+    <div class="lg:col-span-2">
+
+      <!-- Customer Info -->
+      <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+        <h2 class="text-2xl font-bold mb-6 text-blue-600">Thông tin khách hàng</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-gray-600 text-sm">Tên</p>
+            <p class="font-bold"><%= order.customerName || '---' %></p>
+          </div>
+
+          <div>
+            <p class="text-gray-600 text-sm">Email</p>
+            <p class="font-bold">
+              <%= order.user && order.user.email ? order.user.email : '---' %>
+            </p>
+          </div>
+
+          <div>
+            <p class="text-gray-600 text-sm">Số điện thoại</p>
+            <p class="font-bold"><%= order.customerPhone || '---' %></p>
+          </div>
+
+          <div>
+            <p class="text-gray-600 text-sm">Ngày tạo</p>
+            <p class="font-bold">
+              <%= order.createdAt 
+                  ? new Date(order.createdAt).toLocaleDateString('vi-VN') 
+                  : '---' %>
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <p class="text-gray-600 text-sm">Địa chỉ giao hàng</p>
+          <p class="font-bold"><%= order.customerAddress || '---' %></p>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+        <h2 class="text-2xl font-bold mb-6 text-blue-600">Sản phẩm</h2>
+
+        <table class="w-full">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-4 py-3 text-left">Sản phẩm</th>
+              <th class="px-4 py-3 text-center">Giá</th>
+              <th class="px-4 py-3 text-center">Số lượng</th>
+              <th class="px-4 py-3 text-right">Tổng</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y">
+            <% if (order.items && order.items.length > 0) { %>
+              <% order.items.forEach(item => { %>
+                <tr>
+                  <td class="px-4 py-4 font-bold">
+                    <%= item.product && item.product.name 
+                        ? item.product.name 
+                        : 'Sản phẩm đã xoá' %>
+                  </td>
+
+                  <td class="px-4 py-4 text-center">
+                    <%= item.price ? item.price.toLocaleString() : 0 %>₫
+                  </td>
+
+                  <td class="px-4 py-4 text-center">
+                    <%= item.quantity || 0 %>
+                  </td>
+
+                  <td class="px-4 py-4 text-right font-bold">
+                    <%= item.price && item.quantity 
+                        ? (item.price * item.quantity).toLocaleString() 
+                        : 0 %>₫
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="4" class="text-center py-6 text-gray-500">
+                  Không có sản phẩm
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div>
+      <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 sticky top-20">
+        <h2 class="text-2xl font-bold mb-6 text-blue-600">
+          Cập nhật đơn hàng
+        </h2>
+
+        <div class="mb-6">
+          <label class="block text-gray-700 font-bold mb-2">
+            Trạng thái
+          </label>
+
+          <select id="statusSelect" 
+                  class="w-full px-4 py-2 border-2 border-blue-200 rounded-lg">
+            <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+            <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+            <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+            <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+            <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+          </select>
+        </div>
+
+        <button onclick="updateStatus()" 
+                class="w-full btn-primary mb-6">
+          Cập nhật trạng thái
+        </button>
+
+        <div class="space-y-3 mb-6 p-4 bg-white rounded-lg">
+          <div class="flex justify-between">
+            <span>Số lượng:</span>
+            <span class="font-bold">
+              <%= order.items 
+                  ? order.items.reduce((sum, item) => sum + (item.quantity || 0), 0) 
+                  : 0 %>
+            </span>
+          </div>
+
+          <div class="flex justify-between">
+            <span>Tạm tính:</span>
+            <span class="font-bold">
+              <%= (order.subtotalPrice || order.totalPrice || 0).toLocaleString() %>₫
+            </span>
+          </div>
+
+          <% if (order.discountAmount && order.discountAmount > 0) { %>
+            <div class="flex justify-between text-green-600">
+              <span>Giảm giá <%= order.couponCode ? '(' + order.couponCode + ')' : '' %>:</span>
+              <span class="font-bold">-<%= order.discountAmount.toLocaleString() %>₫</span>
+            </div>
+          <% } %>
+
+          <div class="flex justify-between text-xl font-bold text-blue-600 border-t pt-3">
+            <span>Tổng tiền:</span>
+            <span>
+              <%= order.totalPrice 
+                  ? order.totalPrice.toLocaleString() 
+                  : 0 %>₫
+            </span>
+          </div>
+        </div>
+
+        <a href="/admin/orders" 
+           class="block w-full btn-secondary text-center">
+          Quay lại
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateStatus() {
+    const status = document.getElementById('statusSelect').value;
+
+    fetch("/admin/orders/<%= order._id %>/status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ status: status })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("Cập nhật trạng thái thành công");
+        setTimeout(() => location.reload(), 800);
+      } else {
+        alert(data.error || "Có lỗi xảy ra");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Lỗi kết nối server");
+    });
+  }
+</script>

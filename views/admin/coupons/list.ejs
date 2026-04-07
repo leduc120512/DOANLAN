@@ -1,0 +1,272 @@
+<div class="py-8">
+  <h1 class="text-4xl font-bold mb-8 text-blue-600">Quản lý mã giảm giá</h1>
+
+  <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+    <h2 class="text-2xl font-bold mb-6 text-blue-600">Tạo mã giảm giá</h2>
+
+    <form onsubmit="addCoupon(event)">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block font-bold mb-2">Mã giảm giá</label>
+          <input type="text" id="code" required class="w-full px-4 py-2 border rounded-lg" placeholder="VD: GIAM10">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Loại giảm</label>
+          <select id="discountType" class="w-full px-4 py-2 border rounded-lg">
+            <option value="percent">Phần trăm (%)</option>
+            <option value="fixed">Số tiền cố định (₫)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Giá trị giảm</label>
+          <input type="number" id="discountValue" min="0" required class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Đơn tối thiểu</label>
+          <input type="number" id="minOrderValue" min="0" value="0" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Giảm tối đa (nếu %)</label>
+          <input type="number" id="maxDiscount" min="0" value="0" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Giới hạn lượt dùng</label>
+          <input type="number" id="usageLimit" min="0" value="0" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Hạn dùng</label>
+          <input type="datetime-local" id="expiresAt" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block font-bold mb-2">Mô tả</label>
+          <input type="text" id="description" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary">Tạo mã</button>
+    </form>
+  </div>
+
+  <% if (coupons && coupons.length > 0) { %>
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="px-4 py-3 text-left">Mã</th>
+            <th class="px-4 py-3 text-left">Giảm giá</th>
+            <th class="px-4 py-3 text-center">Sử dụng</th>
+            <th class="px-4 py-3 text-center">Hạn dùng</th>
+            <th class="px-4 py-3 text-center">Trạng thái</th>
+            <th class="px-4 py-3 text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          <% coupons.forEach(coupon => { %>
+            <tr>
+              <td class="px-4 py-4">
+                <p class="font-bold text-blue-700"><%= coupon.code %></p>
+                <p class="text-xs text-gray-500"><%= coupon.description || '' %></p>
+              </td>
+              <td class="px-4 py-4">
+                <% if (coupon.discountType === 'percent') { %>
+                  <p class="font-semibold"><%= coupon.discountValue %>%</p>
+                  <% if (coupon.maxDiscount > 0) { %>
+                    <p class="text-xs text-gray-500">Tối đa <%= coupon.maxDiscount.toLocaleString('vi-VN') %>₫</p>
+                  <% } %>
+                <% } else { %>
+                  <p class="font-semibold"><%= coupon.discountValue.toLocaleString('vi-VN') %>₫</p>
+                <% } %>
+                <p class="text-xs text-gray-500">Đơn tối thiểu: <%= (coupon.minOrderValue || 0).toLocaleString('vi-VN') %>₫</p>
+              </td>
+              <td class="px-4 py-4 text-center">
+                <span class="font-semibold"><%= coupon.usedCount || 0 %>/<%= coupon.usageLimit > 0 ? coupon.usageLimit : '∞' %></span>
+              </td>
+              <td class="px-4 py-4 text-center text-sm">
+                <%= coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleString('vi-VN') : 'Không giới hạn' %>
+              </td>
+              <td class="px-4 py-4 text-center">
+                <span class="px-3 py-1 rounded-full text-sm font-bold <%= coupon.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' %>">
+                  <%= coupon.isActive ? 'Đang bật' : 'Đang tắt' %>
+                </span>
+              </td>
+              <td class="px-4 py-4 text-center space-x-3">
+                <button onclick="toggleCoupon('<%= coupon._id %>')" class="text-blue-600 font-bold">Bật/Tắt</button>
+                <button onclick="openEditCoupon(this)"
+                        data-id="<%= coupon._id %>"
+                        data-code="<%= coupon.code %>"
+                        data-description="<%= coupon.description || '' %>"
+                        data-discounttype="<%= coupon.discountType %>"
+                        data-discountvalue="<%= coupon.discountValue %>"
+                        data-minordervalue="<%= coupon.minOrderValue || 0 %>"
+                        data-maxdiscount="<%= coupon.maxDiscount || 0 %>"
+                        data-usagelimit="<%= coupon.usageLimit || 0 %>"
+                        data-expiresat="<%= coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0,16) : '' %>"
+                        data-isactive="<%= coupon.isActive ? 'true' : 'false' %>"
+                        class="text-indigo-600 font-bold">Sửa</button>
+                <button onclick="deleteCoupon('<%= coupon._id %>')" class="text-red-600 font-bold">Xóa</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="bg-white p-8 text-center">Chưa có mã giảm giá nào</div>
+  <% } %>
+</div>
+
+<div id="editCouponModal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+  <div class="bg-white p-6 rounded w-full max-w-2xl">
+    <h2 class="text-xl font-bold mb-4">Chỉnh sửa mã giảm giá</h2>
+
+    <input type="hidden" id="editId">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <input type="text" id="editCode" class="border px-3 py-2 rounded" placeholder="Mã">
+      <select id="editDiscountType" class="border px-3 py-2 rounded">
+        <option value="percent">Phần trăm (%)</option>
+        <option value="fixed">Số tiền cố định (₫)</option>
+      </select>
+      <input type="number" id="editDiscountValue" min="0" class="border px-3 py-2 rounded" placeholder="Giá trị giảm">
+      <input type="number" id="editMinOrderValue" min="0" class="border px-3 py-2 rounded" placeholder="Đơn tối thiểu">
+      <input type="number" id="editMaxDiscount" min="0" class="border px-3 py-2 rounded" placeholder="Giảm tối đa">
+      <input type="number" id="editUsageLimit" min="0" class="border px-3 py-2 rounded" placeholder="Giới hạn lượt dùng">
+      <input type="datetime-local" id="editExpiresAt" class="border px-3 py-2 rounded">
+      <select id="editIsActive" class="border px-3 py-2 rounded">
+        <option value="true">Đang bật</option>
+        <option value="false">Đang tắt</option>
+      </select>
+      <input type="text" id="editDescription" class="border px-3 py-2 rounded" placeholder="Mô tả">
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="saveCoupon()" class="btn-primary flex-1">Lưu</button>
+      <button onclick="closeEditCouponModal()" class="btn-secondary flex-1">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function addCoupon(event) {
+    event.preventDefault();
+
+    const payload = {
+      code: document.getElementById('code').value,
+      description: document.getElementById('description').value,
+      discountType: document.getElementById('discountType').value,
+      discountValue: document.getElementById('discountValue').value,
+      minOrderValue: document.getElementById('minOrderValue').value,
+      maxDiscount: document.getElementById('maxDiscount').value,
+      usageLimit: document.getElementById('usageLimit').value,
+      expiresAt: document.getElementById('expiresAt').value,
+      isActive: true,
+    };
+
+    fetch('/admin/coupons/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        notify('Tạo mã giảm giá thành công');
+        location.reload();
+      } else {
+        notify(data.error || 'Có lỗi', 'error');
+      }
+    })
+    .catch(() => notify('Lỗi server', 'error'));
+  }
+
+  function toggleCoupon(id) {
+    fetch('/admin/coupons/' + id + '/toggle', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          notify(data.error || 'Có lỗi', 'error');
+        }
+      })
+      .catch(() => notify('Lỗi server', 'error'));
+  }
+
+  function deleteCoupon(id) {
+    if (!confirm('Bạn chắc chắn muốn xóa mã giảm giá này?')) return;
+
+    fetch('/admin/coupons/' + id + '/delete', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          notify('Xóa mã thành công');
+          location.reload();
+        } else {
+          notify(data.error || 'Có lỗi', 'error');
+        }
+      })
+      .catch(() => notify('Lỗi server', 'error'));
+  }
+
+  function openEditCoupon(btn) {
+    document.getElementById('editId').value = btn.dataset.id;
+    document.getElementById('editCode').value = btn.dataset.code || '';
+    document.getElementById('editDescription').value = btn.dataset.description || '';
+    document.getElementById('editDiscountType').value = btn.dataset.discounttype || 'percent';
+    document.getElementById('editDiscountValue').value = btn.dataset.discountvalue || 0;
+    document.getElementById('editMinOrderValue').value = btn.dataset.minordervalue || 0;
+    document.getElementById('editMaxDiscount').value = btn.dataset.maxdiscount || 0;
+    document.getElementById('editUsageLimit').value = btn.dataset.usagelimit || 0;
+    document.getElementById('editExpiresAt').value = btn.dataset.expiresat || '';
+    document.getElementById('editIsActive').value = btn.dataset.isactive || 'true';
+
+    const modal = document.getElementById('editCouponModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeEditCouponModal() {
+    const modal = document.getElementById('editCouponModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+  }
+
+  function saveCoupon() {
+    const id = document.getElementById('editId').value;
+
+    const payload = {
+      code: document.getElementById('editCode').value,
+      description: document.getElementById('editDescription').value,
+      discountType: document.getElementById('editDiscountType').value,
+      discountValue: document.getElementById('editDiscountValue').value,
+      minOrderValue: document.getElementById('editMinOrderValue').value,
+      maxDiscount: document.getElementById('editMaxDiscount').value,
+      usageLimit: document.getElementById('editUsageLimit').value,
+      expiresAt: document.getElementById('editExpiresAt').value,
+      isActive: document.getElementById('editIsActive').value,
+    };
+
+    fetch('/admin/coupons/' + id + '/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        notify('Cập nhật mã giảm giá thành công');
+        location.reload();
+      } else {
+        notify(data.error || 'Có lỗi', 'error');
+      }
+    })
+    .catch(() => notify('Lỗi server', 'error'));
+  }
+</script>

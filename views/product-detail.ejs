@@ -1,0 +1,348 @@
+<div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
+    <!-- Product Image Section -->
+    <% const productImages = (product.images && product.images.length > 0) ? product.images : (product.image ? [product.image] : []); %>
+    <div class="bg-gray-100 rounded-xl overflow-hidden shadow-lg p-3 sm:p-4">
+      <div class="aspect-square lg:aspect-[4/5] relative rounded-lg overflow-hidden bg-white">
+        <% if (productImages.length > 0) { %>
+          <img
+            id="mainProductImage"
+            src="<%= productImages[0] %>"
+            alt="<%= product.name %>"
+            class="w-full h-full object-cover"
+            onerror="this.src='/images/placeholder-product.jpg'; this.alt='Hình ảnh không khả dụng';"
+          >
+        <% } else { %>
+          <div class="w-full h-full flex items-center justify-center bg-gray-200">
+            <span class="text-gray-400 text-9xl">📦</span>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (productImages.length > 1) { %>
+        <div class="grid grid-cols-5 gap-2 mt-3">
+          <% productImages.forEach((img, index) => { %>
+            <button
+              type="button"
+              onclick="selectProductImage('<%= img %>', this)"
+              class="border <%= index === 0 ? 'border-blue-500' : 'border-gray-200' %> rounded-md overflow-hidden hover:border-blue-400 transition"
+            >
+              <img src="<%= img %>" alt="Ảnh <%= index + 1 %>" class="w-full h-16 object-cover">
+            </button>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Product Info Section -->
+    <div class="flex flex-col">
+      <h1 class="text-3xl sm:text-4xl font-bold mb-4 text-blue-700"><%= product.name %></h1>
+      
+      <div class="flex items-center gap-5 mb-6">
+        <div class="flex items-center bg-yellow-100 px-3 py-1 rounded-full">
+          <span class="text-yellow-500 text-2xl mr-1">★</span>
+          <span class="font-bold text-yellow-700">
+            <%= product.rating ? product.rating.toFixed(1) : '—' %>
+          </span>
+        </div>
+        <span class="text-gray-600 text-lg">
+          (<%= product.reviews || 0 %> đánh giá)
+        </span>
+      </div>
+
+      <p class="text-gray-700 text-lg leading-relaxed mb-8 flex-grow">
+        <%= product.description || 'Sản phẩm chất lượng cao từ thương hiệu uy tín.' %>
+      </p>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div class="text-4xl sm:text-5xl font-bold text-blue-700 mb-3">
+          <%= product.price.toLocaleString('vi-VN') %>₫
+        </div>
+        <div class="space-y-2 text-gray-700">
+          <p>
+            Tình trạng kho: 
+            <strong class="<%= product.stock > 0 ? 'text-green-600' : 'text-red-600' %>">
+              <%= product.stock > 0 ? 'Còn hàng' : 'Hết hàng' %>
+            </strong>
+          </p>
+          <p>Số lượng còn lại: <strong><%= product.stock %></strong> sản phẩm</p>
+        </div>
+      </div>
+
+      <% if (product.stock > 0) { %>
+        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+          <!-- Quantity Selector -->
+          <div class="flex items-center border-2 border-blue-200 rounded-lg overflow-hidden w-full sm:w-auto">
+            <button 
+              type="button" 
+              onclick="decreaseQty()" 
+              class="px-5 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xl transition"
+            >−</button>
+            <input 
+              type="number" 
+              id="quantity" 
+              value="1" 
+              min="1" 
+              max="<%= product.stock %>" 
+              class="w-20 sm:w-24 text-center text-xl font-medium border-l border-r border-blue-200 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+            <button 
+              type="button" 
+              onclick="increaseQty(<%= product.stock %>)" 
+              class="px-5 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xl transition"
+            >+</button>
+          </div>
+
+          <!-- Add to Cart Button -->
+          <button 
+            id="addToCartBtn"
+            onclick="addToCart('<%= product._id %>')"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-lg transition shadow-md flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Thêm vào giỏ hàng
+          </button>
+        </div>
+
+        <!-- Buy Now Button -->
+        <button 
+          onclick="buyNow('<%= product._id %>')"
+          class="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white text-lg font-bold py-4 rounded-lg transition shadow-lg"
+        >
+          Mua ngay
+        </button>
+      <% } else { %>
+        <button 
+          disabled
+          class="w-full bg-gray-400 text-white text-lg font-bold py-4 rounded-lg cursor-not-allowed"
+        >
+          Hết hàng - Không thể đặt mua
+        </button>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Reviews & Comment Section -->
+  <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-blue-700 border-b border-blue-100 pb-4">
+      Đánh giá từ khách hàng
+    </h2>
+
+    <% if (comments && comments.length > 0) { %>
+      <div class="space-y-8">
+        <% comments.forEach(comment => { %>
+          <div class="border-b border-gray-200 pb-6 last:border-b-0">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <p class="font-semibold text-gray-900"><%= comment.user?.fullName || 'Khách hàng' %></p>
+                <div class="flex items-center mt-1">
+                  <% for(let i = 1; i <= 5; i++) { %>
+                    <span class="<%= i <= comment.rating ? 'text-yellow-400' : 'text-gray-300' %> text-xl">★</span>
+                  <% } %>
+                </div>
+              </div>
+              <span class="text-gray-500 text-sm">
+                <%= new Date(comment.createdAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }) %>
+              </span>
+            </div>
+            <p class="text-gray-700 leading-relaxed"><%= comment.text %></p>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div class="text-center py-12 text-gray-500">
+        <p class="text-xl">Chưa có đánh giá nào cho sản phẩm này.</p>
+        <p class="mt-2">Hãy là người đầu tiên chia sẻ trải nghiệm!</p>
+      </div>
+    <% } %>
+
+    <!-- Comment Form -->
+    <% if (user && user._id) { %>
+      <div class="mt-10 pt-8 border-t border-gray-200">
+        <h3 class="text-xl font-bold mb-6 text-gray-800">Viết đánh giá của bạn</h3>
+        
+        <form id="commentForm" onsubmit="submitComment(event, '<%= product._id %>')">
+          <div class="mb-6">
+            <label class="block text-gray-700 font-medium mb-2">Đánh giá sao</label>
+            <select 
+              id="rating" 
+              name="rating" 
+              required 
+              class="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="">Chọn số sao</option>
+              <option value="5">5 ★ - Xuất sắc</option>
+              <option value="4">4 ★ - Rất tốt</option>
+              <option value="3">3 ★ - Tạm ổn</option>
+              <option value="2">2 ★ - Cần cải thiện</option>
+              <option value="1">1 ★ - Không hài lòng</option>
+            </select>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-gray-700 font-medium mb-2">Nội dung đánh giá</label>
+            <textarea 
+              id="text" 
+              name="text" 
+              rows="5" 
+              required 
+              placeholder="Chia sẻ cảm nhận chân thực của bạn về sản phẩm..." 
+              class="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            ></textarea>
+          </div>
+
+          <button 
+            type="submit" 
+            id="submitCommentBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition disabled:opacity-60"
+          >
+            Gửi đánh giá
+          </button>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="mt-10 pt-8 border-t border-gray-200 bg-blue-50 p-6 rounded-xl text-center">
+        <p class="text-gray-700 text-lg">
+          <a href="/auth/login" class="text-blue-600 font-bold hover:underline">Đăng nhập</a> 
+          để viết đánh giá và nhận ưu đãi đặc biệt!
+        </p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  function selectProductImage(imageUrl, selectedThumb) {
+    const mainImage = document.getElementById('mainProductImage');
+    if (!mainImage) return;
+
+    mainImage.src = imageUrl;
+
+    const thumbs = selectedThumb.parentElement.querySelectorAll('button');
+    thumbs.forEach((thumb) => {
+      thumb.classList.remove('border-blue-500');
+      thumb.classList.add('border-gray-200');
+    });
+
+    selectedThumb.classList.remove('border-gray-200');
+    selectedThumb.classList.add('border-blue-500');
+  }
+
+  // Quantity Controls
+  function increaseQty(max) {
+    const input = document.getElementById('quantity');
+    let val = parseInt(input.value);
+    if (val < max) input.value = val + 1;
+  }
+
+  function decreaseQty() {
+    const input = document.getElementById('quantity');
+    let val = parseInt(input.value);
+    if (val > 1) input.value = val - 1;
+  }
+
+  // Add to Cart with loading state
+  async function addToCart(productId) {
+    const btn = document.getElementById('addToCartBtn');
+    const qty = parseInt(document.getElementById('quantity').value);
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Đang thêm...';
+
+    try {
+      const res = await fetch('/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: qty })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        notify('Đã thêm vào giỏ hàng thành công!', 'success');
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        notify(data.error || 'Không thể thêm sản phẩm', 'error');
+      }
+    } catch (err) {
+      notify('Lỗi kết nối, vui lòng thử lại', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg> Thêm vào giỏ hàng';
+    }
+  }
+async function buyNow(productId) {
+    const btn = document.getElementById('addToCartBtn');
+    const qty = parseInt(document.getElementById('quantity').value);
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Đang thêm...';
+
+    try {
+      const res = await fetch('/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: qty })
+      });
+
+      const data = await res.json();
+
+     if (data.success) {
+  notify('Lựa chọn mua thành công', 'success');
+  setTimeout(() => {
+    window.location.href = '/cart';
+  }, 1000);
+}
+    } catch (err) {
+      notify('Lỗi kết nối, vui lòng thử lại', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg> Thêm vào giỏ hàng';
+    }
+  }
+
+  // Buy Now (có thể tùy chỉnh theo logic backend)
+
+
+  // Submit Comment with loading
+  async function submitComment(event, productId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const btn = document.getElementById('submitCommentBtn');
+    const rating = document.getElementById('rating').value;
+    const text = document.getElementById('text').value.trim();
+
+    if (!rating) {
+      notify('Vui lòng chọn số sao đánh giá', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Đang gửi...';
+
+    try {
+      const res = await fetch(`/product/${productId}/review`, {  // sửa endpoint hợp lý hơn
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: parseInt(rating), text })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        notify('Cảm ơn đánh giá của bạn!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        notify(data.error || 'Không thể gửi đánh giá', 'error');
+      }
+    } catch (err) {
+      notify('Lỗi kết nối, vui lòng thử lại sau', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Gửi đánh giá';
+    }
+  }
+</script>

@@ -1,0 +1,29 @@
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <% products.forEach(product => { %>
+    <% const displayImage = (product.images && product.images.length > 0) ? product.images[0] : product.image; %>
+    <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition overflow-hidden">
+      <div class="bg-gray-200 h-48 flex items-center justify-center">
+        <% if (displayImage) { %>
+          <img src="<%= displayImage %>" alt="<%= product.name %>" class="w-full h-full object-cover">
+        <% } else { %>
+          <span class="text-gray-400 text-5xl">📦</span>
+        <% } %>
+      </div>
+      <div class="p-4">
+        <h3 class="font-bold text-base mb-2 line-clamp-2"><%= product.name %></h3>
+        <p class="text-gray-600 text-xs mb-3 line-clamp-2"><%= product.description || 'Không có mô tả' %></p>
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-blue-600 font-bold"><%= product.price.toLocaleString('vi-VN') %>₫</span>
+          <span class="text-yellow-400 text-sm">★ <%= product.rating ? product.rating.toFixed(1) : '—' %></span>
+        </div>
+        <div class="flex gap-2">
+          <a href="/product/<%= product._id %>" class="flex-1 btn-primary text-center text-sm py-2">Chi tiết</a>
+          <button 
+            class="flex-1 btn-secondary text-sm py-2"
+            onclick="addToCart('<%= product._id %>')"
+          >Thêm vào giỏ</button>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+</div>

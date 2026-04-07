@@ -1,0 +1,46 @@
+<div class="py-8">
+    <h1 class="text-4xl font-bold mb-8 text-blue-600">Đơn hàng của tôi</h1>
+
+    <% if (orders && orders.length > 0) { %>
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="px-4 py-3 text-left">Mã đơn hàng</th>
+              <th class="px-4 py-3 text-center">Ngày tạo</th>
+              <th class="px-4 py-3 text-right">Tổng tiền</th>
+              <th class="px-4 py-3 text-center">Trạng thái</th>
+              <th class="px-4 py-3 text-center">Hành động</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <% orders.forEach(order => { %>
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-4 font-bold text-blue-600">#<%= order._id.toString().slice(-8).toUpperCase() %></td>
+                <td class="px-4 py-4 text-center"><%= new Date(order.createdAt).toLocaleDateString('vi-VN') %></td>
+                <td class="px-4 py-4 text-right font-bold"><%= order.totalPrice.toLocaleString() %>₫</td>
+                <td class="px-4 py-4 text-center">
+                  <span class="px-3 py-1 rounded-lg font-bold text-white
+                    <%= order.status === 'Pending' ? 'bg-yellow-500' : 
+                        order.status === 'Processing' ? 'bg-blue-500' : 
+                        order.status === 'Shipped' ? 'bg-indigo-500' : 
+                        order.status === 'Delivered' ? 'bg-green-500' : 'bg-red-500' %>">
+                    <%= order.status %>
+                  </span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                  <a href="/order/<%= order._id %>" class="text-blue-600 hover:text-blue-800 font-bold">Xem chi tiết</a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+        <p class="text-gray-600 text-xl mb-6">Bạn chưa có đơn hàng nào</p>
+        <a href="/" class="btn-primary">Bắt đầu mua hàng</a>
+      </div>
+    <% } %>
+  </div>
+</div>

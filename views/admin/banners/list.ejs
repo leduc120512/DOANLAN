@@ -1,0 +1,236 @@
+<div class="py-8">
+  <h1 class="text-4xl font-bold mb-8 text-blue-600">Quản lý banner</h1>
+
+  <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+    <h2 class="text-2xl font-bold mb-6 text-blue-600">Thêm banner mới</h2>
+
+    <form onsubmit="addBanner(event)">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block font-bold mb-2">Tiêu đề</label>
+          <input type="text" id="title" required class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Link khi click</label>
+          <input type="text" id="link" value="/search" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Mô tả ngắn</label>
+          <input type="text" id="subtitle" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2">Thứ tự hiển thị</label>
+          <input type="number" id="sortOrder" value="0" class="w-full px-4 py-2 border rounded-lg">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block font-bold mb-2">Ảnh banner</label>
+          <input type="file" id="image" accept="image/*" required class="w-full px-4 py-2 border rounded-lg">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary">Thêm banner</button>
+    </form>
+  </div>
+
+  <% if (banners && banners.length > 0) { %>
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="px-4 py-3 text-left">Ảnh</th>
+            <th class="px-4 py-3 text-left">Nội dung</th>
+            <th class="px-4 py-3 text-center">Thứ tự</th>
+            <th class="px-4 py-3 text-center">Trạng thái</th>
+            <th class="px-4 py-3 text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          <% banners.forEach(banner => { %>
+            <tr>
+              <td class="px-4 py-4">
+                <img src="<%= banner.image %>" alt="<%= banner.title %>" class="w-28 h-16 object-cover rounded border">
+              </td>
+              <td class="px-4 py-4">
+                <p class="font-bold"><%= banner.title %></p>
+                <p class="text-sm text-gray-600"><%= banner.subtitle || '' %></p>
+                <p class="text-xs text-blue-600 mt-1"><%= banner.link || '/search' %></p>
+              </td>
+              <td class="px-4 py-4 text-center font-semibold"><%= banner.sortOrder || 0 %></td>
+              <td class="px-4 py-4 text-center">
+                <span class="px-3 py-1 rounded-full text-sm font-bold <%= banner.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' %>">
+                  <%= banner.isActive ? 'Hiển thị' : 'Ẩn' %>
+                </span>
+              </td>
+              <td class="px-4 py-4 text-center space-x-3">
+                <button onclick="toggleBanner('<%= banner._id %>')" class="text-blue-600 font-bold">Bật/Tắt</button>
+                <button onclick="openEditBanner(this)"
+                        data-id="<%= banner._id %>"
+                        data-title="<%= banner.title %>"
+                        data-subtitle="<%= banner.subtitle || '' %>"
+                        data-link="<%= banner.link || '/search' %>"
+                        data-sortorder="<%= banner.sortOrder || 0 %>"
+                        data-isactive="<%= banner.isActive ? 'true' : 'false' %>"
+                        class="text-indigo-600 font-bold">Sửa</button>
+                <button onclick="deleteBanner('<%= banner._id %>')" class="text-red-600 font-bold">Xóa</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="bg-white p-8 text-center">Chưa có banner nào</div>
+  <% } %>
+</div>
+
+<div id="editBannerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+  <div class="bg-white p-6 rounded w-full max-w-xl">
+    <h2 class="text-xl font-bold mb-4">Chỉnh sửa banner</h2>
+
+    <input type="hidden" id="editId">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block font-bold mb-1">Tiêu đề</label>
+        <input type="text" id="editTitle" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">Link</label>
+        <input type="text" id="editLink" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">Mô tả</label>
+        <input type="text" id="editSubtitle" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">Thứ tự</label>
+        <input type="number" id="editSortOrder" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">Trạng thái</label>
+        <select id="editIsActive" class="w-full border px-3 py-2 rounded">
+          <option value="true">Hiển thị</option>
+          <option value="false">Ẩn</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold mb-1">Ảnh mới (tùy chọn)</label>
+        <input type="file" id="editImage" accept="image/*" class="w-full border px-3 py-2 rounded">
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="saveBanner()" class="btn-primary flex-1">Lưu</button>
+      <button onclick="closeEditBannerModal()" class="btn-secondary flex-1">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function addBanner(event) {
+    event.preventDefault();
+
+    const formData = new FormData();
+    formData.append('title', document.getElementById('title').value);
+    formData.append('subtitle', document.getElementById('subtitle').value);
+    formData.append('link', document.getElementById('link').value);
+    formData.append('sortOrder', document.getElementById('sortOrder').value);
+
+    const imageFile = document.getElementById('image').files[0];
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    fetch('/admin/banners/add', { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          notify('Thêm banner thành công');
+          location.reload();
+        } else {
+          notify(data.error || 'Có lỗi', 'error');
+        }
+      })
+      .catch(() => notify('Lỗi server', 'error'));
+  }
+
+  function toggleBanner(id) {
+    fetch('/admin/banners/' + id + '/toggle', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          notify(data.error || 'Có lỗi', 'error');
+        }
+      })
+      .catch(() => notify('Lỗi server', 'error'));
+  }
+
+  function deleteBanner(id) {
+    if (!confirm('Bạn chắc chắn muốn xóa banner này?')) return;
+
+    fetch('/admin/banners/' + id + '/delete', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          notify('Xóa banner thành công');
+          location.reload();
+        } else {
+          notify(data.error || 'Có lỗi', 'error');
+        }
+      })
+      .catch(() => notify('Lỗi server', 'error'));
+  }
+
+  function openEditBanner(btn) {
+    document.getElementById('editId').value = btn.dataset.id;
+    document.getElementById('editTitle').value = btn.dataset.title || '';
+    document.getElementById('editSubtitle').value = btn.dataset.subtitle || '';
+    document.getElementById('editLink').value = btn.dataset.link || '/search';
+    document.getElementById('editSortOrder').value = btn.dataset.sortorder || 0;
+    document.getElementById('editIsActive').value = btn.dataset.isactive || 'true';
+    document.getElementById('editImage').value = '';
+
+    const modal = document.getElementById('editBannerModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeEditBannerModal() {
+    const modal = document.getElementById('editBannerModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+  }
+
+  function saveBanner() {
+    const id = document.getElementById('editId').value;
+    const formData = new FormData();
+    formData.append('title', document.getElementById('editTitle').value);
+    formData.append('subtitle', document.getElementById('editSubtitle').value);
+    formData.append('link', document.getElementById('editLink').value);
+    formData.append('sortOrder', document.getElementById('editSortOrder').value);
+    formData.append('isActive', document.getElementById('editIsActive').value);
+
+    const imageFile = document.getElementById('editImage').files[0];
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    fetch('/admin/banners/' + id + '/edit', { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          notify('Cập nhật banner thành công');
+          location.reload();
+        } else {
+          notify(data.error || 'Có lỗi', 'error');
+        }
+      })
+      .catch(() => notify('Lỗi server', 'error'));
+  }
+</script>

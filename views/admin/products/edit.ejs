@@ -1,0 +1,140 @@
+<div class="py-8">
+  <h1 class="text-3xl font-bold mb-6 text-blue-600">
+    Chỉnh sửa sản phẩm
+  </h1>
+
+  <form 
+    action="/admin/products/<%= product._id %>/edit" 
+    method="POST" 
+    enctype="multipart/form-data" 
+    class="bg-white p-6 rounded shadow"
+  >
+
+    <!-- NAME -->
+    <input 
+      type="text"
+      name="name" 
+      value="<%= product.name || '' %>" 
+      class="w-full mb-4 p-2 border rounded" 
+      required
+    >
+
+    <!-- DESCRIPTION -->
+    <textarea 
+      name="description" 
+      class="w-full mb-4 p-2 border rounded" 
+      required
+    ><%= product.description || '' %></textarea>
+
+    <!-- PRICE -->
+    <input 
+      type="number" 
+      name="price" 
+      value="<%= product.price || 0 %>" 
+      class="w-full mb-4 p-2 border rounded" 
+      required
+    >
+
+    <!-- STOCK -->
+    <input 
+      type="number" 
+      name="stock" 
+      value="<%= product.stock || 0 %>" 
+      class="w-full mb-4 p-2 border rounded" 
+      required
+    >
+
+    <!-- CATEGORY -->
+    <select 
+      name="category" 
+      class="w-full mb-4 p-2 border rounded" 
+      required
+    >
+      <option value="">-- Chọn danh mục --</option>
+
+    <% categories.forEach(cat => { %>
+
+  <% 
+    let selected = false;
+
+    if (product.category) {
+      if (product.category._id) {
+        selected = product.category._id.toString() === cat._id.toString();
+      } else {
+        selected = product.category.toString() === cat._id.toString();
+      }
+    }
+  %>
+
+  <option value="<%= cat._id %>" <%= selected ? 'selected' : '' %>>
+    <%= cat.name %>
+  </option>
+
+<% }) %>
+    </select>
+
+    <!-- IMAGE PREVIEW -->
+    <% const currentImages = (product.images && product.images.length > 0) ? product.images : (product.image ? [product.image] : []); %>
+    <% if (currentImages.length > 0) { %>
+      <div class="mb-4">
+        <p class="text-sm text-gray-500 mb-2">Ảnh hiện tại:</p>
+        <div class="flex flex-wrap gap-2">
+          <% currentImages.forEach(img => { %>
+            <div class="relative">
+              <img 
+                src="<%= img %>" 
+                class="w-24 h-24 object-cover rounded border"
+              >
+              <button
+                type="button"
+                onclick="deleteProductImage('<%= product._id %>', '<%= img %>')"
+                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
+                title="Xóa ảnh"
+              >
+                ×
+              </button>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- UPLOAD NEW IMAGE -->
+    <p class="text-sm text-gray-500 mb-2">Upload để thêm ảnh mới (không ghi đè ảnh cũ)</p>
+    <input 
+      type="file" 
+      name="images"
+      accept="image/*"
+      multiple
+      class="mb-4"
+    >
+
+    <button class="btn-primary">
+      Cập nhật
+    </button>
+
+  </form>
+</div>
+
+<script>
+  async function deleteProductImage(productId, imageUrl) {
+    if (!confirm('Bạn chắc chắn muốn xóa ảnh này?')) return;
+
+    try {
+      const res = await fetch(`/admin/products/${productId}/images/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        location.reload();
+      } else {
+        alert(data.error || 'Không thể xóa ảnh');
+      }
+    } catch (error) {
+      alert('Lỗi kết nối');
+    }
+  }
+</script>

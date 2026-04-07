@@ -1,0 +1,252 @@
+<header class="bg-blue-600 text-white shadow-lg">
+  <div class="container mx-auto px-4 py-4">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-10">
+        <a href="/" class="text-2xl font-bold"> Bán quạt</a>
+        <form method="GET" action="/search" class="hidden md:flex" id="desktopSearchForm">
+          <div class="relative">
+            <input
+              type="text"
+              name="keyword"
+              placeholder="Tìm kiếm sản phẩm..."
+              id="desktopSearchInput"
+              value="<%= typeof keyword !== 'undefined' ? keyword : '' %>"
+              autocomplete="off"
+              class="px-4 py-2 rounded-l-lg text-black w-60"
+            />
+            <div
+              id="desktopSearchDropdown"
+              class="absolute top-full left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg border border-gray-200 hidden z-50"
+            >
+              <div id="desktopSearchHistoryList" class="max-h-56 overflow-y-auto"></div>
+              <button
+                type="button"
+                id="desktopClearHistoryBtn"
+                class="w-full text-left px-3 py-2 text-sm text-red-600 border-t hover:bg-gray-50"
+              >
+                Xóa lịch sử tìm kiếm
+              </button>
+            </div>
+          </div>
+          <select name="category" class="px-4 py-2 text-black">
+            <option value="all">Tất cả danh mục</option>
+
+            <% if (typeof categories !== "undefined" &&
+            Array.isArray(categories) && categories.length > 0) { %><%
+            categories.forEach(category => { %>
+            <option value="<%= category._id %>" <%= (typeof selectedCategory !== 'undefined' && selectedCategory && selectedCategory.toString() === category._id.toString()) ? 'selected' : '' %>><%= category.name %></option>
+            <% }) %> <% } %>
+          </select>
+          <button
+            type="submit"
+            class="px-6 py-2 bg-blue-800 rounded-r-lg hover:bg-blue-900"
+          >
+            Tìm
+          </button>
+        </form>
+      </div>
+
+      <nav class="flex items-center gap-6">
+        <% if (user) { %>
+        <div class="relative group">
+          <button class="px-4 py-2 rounded hover:bg-blue-700">
+            Xin chào, <%= user.fullName %>
+          </button>
+          <div
+            class="absolute right-0 mt-0 w-48 bg-white text-black rounded shadow-lg hidden group-hover:block z-50"
+          >
+            <a href="/user/profile" class="block px-4 py-2 hover:bg-gray-100"
+              >Thông tin cá nhân</a
+            >
+            <a href="/order/my-orders" class="block px-4 py-2 hover:bg-gray-100"
+              >Đơn hàng của tôi</a
+            >
+            <% if (user.role === 'admin') { %>
+            <a href="/admin" class="block px-4 py-2 hover:bg-gray-100 border-t"
+              >Admin Dashboard</a
+            >
+            <% } %>
+            <a
+              href="/auth/logout"
+              class="block px-4 py-2 hover:bg-gray-100 border-t"
+              >Đăng xuất</a
+            >
+          </div>
+        </div>
+        <a href="/cart" class="px-4 py-2 rounded hover:bg-blue-700 relative">
+           Giỏ hàng <% if (cart && cart.length > 0) { %>
+          <span
+            class="absolute -top-2 -right-2 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs"
+          >
+            <%= cart.length %>
+          </span>
+          <% } %>
+        </a>
+        <% } else { %>
+        <a href="/auth/login" class="px-4 py-2 rounded hover:bg-blue-700"
+          >Đăng nhập</a
+        >
+        <a href="/auth/register" class="px-4 py-2 rounded hover:bg-blue-700"
+          >Đăng ký</a
+        >
+        <% } %>
+      </nav>
+    </div>
+
+    <!-- Mobile search -->
+    <form method="GET" action="/search" class="md:hidden mt-4" id="mobileSearchForm">
+      <div class="flex gap-2">
+        <input
+          type="text"
+          name="keyword"
+          placeholder="Tìm kiếm..."
+          id="mobileSearchInput"
+          value="<%= typeof keyword !== 'undefined' ? keyword : '' %>"
+          autocomplete="off"
+          class="px-3 py-2 rounded flex-1 text-black text-sm"
+        />
+        <button
+          type="submit"
+          class="px-4 py-2 bg-blue-800 rounded hover:bg-blue-900 text-sm"
+        >
+          Tìm
+        </button>
+      </div>
+      <div
+        id="mobileSearchDropdown"
+        class="mt-1 bg-white text-black rounded-lg shadow-lg border border-gray-200 hidden z-50"
+      >
+        <div id="mobileSearchHistoryList" class="max-h-56 overflow-y-auto"></div>
+        <button
+          type="button"
+          id="mobileClearHistoryBtn"
+          class="w-full text-left px-3 py-2 text-sm text-red-600 border-t hover:bg-gray-50"
+        >
+          Xóa lịch sử tìm kiếm
+        </button>
+      </div>
+    </form>
+  </div>
+</header>
+
+<script>
+  (function () {
+    const STORAGE_KEY = 'searchHistory';
+    const MAX_ITEMS = 8;
+    const SERVER_HISTORY = <%- JSON.stringify((typeof searchHistory !== 'undefined' && Array.isArray(searchHistory)) ? searchHistory : []) %>;
+
+    function getHistory() {
+      const serverHistory = Array.isArray(SERVER_HISTORY)
+        ? SERVER_HISTORY.filter((item) => typeof item === 'string' && item.trim())
+        : [];
+
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        const localHistory = Array.isArray(parsed)
+          ? parsed.filter((item) => typeof item === 'string' && item.trim())
+          : [];
+
+        const merged = [...serverHistory];
+        localHistory.forEach((item) => {
+          const exists = merged.some(
+            (entry) => entry.toLowerCase() === item.toLowerCase(),
+          );
+          if (!exists) {
+            merged.push(item);
+          }
+        });
+
+        return merged.slice(0, MAX_ITEMS);
+      } catch (error) {
+        return serverHistory.slice(0, MAX_ITEMS);
+      }
+    }
+
+    function saveHistory(keyword) {
+      const value = (keyword || '').trim();
+      if (!value) return;
+
+      const current = getHistory().filter((item) => item.toLowerCase() !== value.toLowerCase());
+      current.unshift(value);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(current.slice(0, MAX_ITEMS)));
+    }
+
+    function renderDropdown(listElement, inputElement, dropdownElement, history) {
+      if (!listElement || !inputElement || !dropdownElement) return;
+
+      const keyword = inputElement.value.trim().toLowerCase();
+      const filtered = history.filter((item) => item.toLowerCase().includes(keyword));
+
+      listElement.innerHTML = '';
+      filtered.forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'w-full text-left px-3 py-2 hover:bg-gray-100';
+        button.textContent = item;
+        button.addEventListener('click', () => {
+          inputElement.value = item;
+          dropdownElement.classList.add('hidden');
+        });
+
+        listElement.appendChild(button);
+      });
+
+      const hasItems = filtered.length > 0;
+      dropdownElement.classList.toggle('hidden', !hasItems);
+    }
+
+    function setupSearchForm(config) {
+      const { formId, inputId, dropdownId, listId, clearBtnId } = config;
+      const form = document.getElementById(formId);
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const list = document.getElementById(listId);
+      const clearBtn = document.getElementById(clearBtnId);
+
+      if (!form || !input || !dropdown || !list || !clearBtn) return;
+
+      const refresh = () => renderDropdown(list, input, dropdown, getHistory());
+
+      form.addEventListener('submit', () => saveHistory(input.value));
+      input.addEventListener('focus', refresh);
+      input.addEventListener('input', refresh);
+
+      clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(STORAGE_KEY);
+        list.innerHTML = '';
+        dropdown.classList.add('hidden');
+
+        fetch('/search/history/clear', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).catch(() => {
+          // Nếu request lỗi vẫn giữ được hành vi xóa local lịch sử.
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!form.contains(event.target)) {
+          dropdown.classList.add('hidden');
+        }
+      });
+    }
+
+    setupSearchForm({
+      formId: 'desktopSearchForm',
+      inputId: 'desktopSearchInput',
+      dropdownId: 'desktopSearchDropdown',
+      listId: 'desktopSearchHistoryList',
+      clearBtnId: 'desktopClearHistoryBtn'
+    });
+
+    setupSearchForm({
+      formId: 'mobileSearchForm',
+      inputId: 'mobileSearchInput',
+      dropdownId: 'mobileSearchDropdown',
+      listId: 'mobileSearchHistoryList',
+      clearBtnId: 'mobileClearHistoryBtn'
+    });
+  })();
+</script>

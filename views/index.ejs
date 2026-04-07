@@ -1,0 +1,210 @@
+<div class="py-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+  <!-- Hero Swiper Banner -->
+  <div class="mb-12 rounded-2xl overflow-hidden shadow-lg">
+    <div class="swiper" id="heroSwiper">
+      <div class="swiper-wrapper">
+        <% if (banners && banners.length > 0) { %>
+          <% banners.forEach(banner => { %>
+            <div class="swiper-slide relative">
+              <div class="h-[280px] md:h-[380px] bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400">
+                <img src="<%= banner.image %>" alt="<%= banner.title %>" class="w-full h-full object-cover opacity-80">
+                <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent"></div>
+                <div class="absolute inset-0 flex items-center">
+                  <div class="px-6 md:px-12 text-white max-w-xl">
+                    <p class="text-sm md:text-base uppercase tracking-wide mb-2">Ưu đãi nổi bật</p>
+                    <h1 class="text-2xl md:text-4xl font-bold mb-3"><%= banner.title %></h1>
+                    <p class="text-sm md:text-lg mb-5 line-clamp-2"><%= banner.subtitle || 'Khám phá sản phẩm nổi bật hôm nay' %></p>
+                    <a href="<%= banner.link || '/search' %>" class="btn-primary">Xem ngay</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else if (topProducts && topProducts.length > 0) { %>
+          <% topProducts.forEach(product => { %>
+            <% const slideImage = (product.images && product.images.length > 0) ? product.images[0] : product.image; %>
+            <div class="swiper-slide relative">
+              <div class="h-[280px] md:h-[380px] bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400">
+                <% if (slideImage) { %>
+                  <img src="<%= slideImage %>" alt="<%= product.name %>" class="w-full h-full object-cover opacity-75">
+                <% } %>
+                <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent"></div>
+                <div class="absolute inset-0 flex items-center">
+                  <div class="px-6 md:px-12 text-white max-w-xl">
+                    <p class="text-sm md:text-base uppercase tracking-wide mb-2">Sản phẩm nổi bật</p>
+                    <h1 class="text-2xl md:text-4xl font-bold mb-3"><%= product.name %></h1>
+                    <p class="text-sm md:text-lg mb-5 line-clamp-2"><%= product.description %></p>
+                    <a href="/product/<%= product._id %>" class="btn-primary">Xem sản phẩm</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="swiper-slide">
+            <div class="h-[280px] md:h-[380px] bg-gradient-to-r from-blue-700 to-blue-400 flex items-center">
+              <div class="px-6 md:px-12 text-white">
+                <h1 class="text-2xl md:text-4xl font-bold mb-3">Chào mừng đến QuạtStore</h1>
+                <p class="text-sm md:text-lg mb-5">Cửa hàng quạt chất lượng với nhiều ưu đãi hấp dẫn.</p>
+                <a href="/search" class="btn-primary">Mua ngay</a>
+              </div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="h-[280px] md:h-[380px] bg-gradient-to-r from-cyan-600 to-blue-600 flex items-center">
+              <div class="px-6 md:px-12 text-white">
+                <h1 class="text-2xl md:text-4xl font-bold mb-3">Miễn phí tư vấn</h1>
+                <p class="text-sm md:text-lg mb-5">Giúp bạn chọn đúng loại quạt phù hợp nhu cầu.</p>
+                <a href="/search" class="btn-primary">Khám phá ngay</a>
+              </div>
+            </div>
+          </div>
+        <% } %>
+      </div>
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+  </div>
+
+  <!-- Top Products Section -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-blue-600">
+      Top 3 Quạt bán chạy nhất
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <% if (topProducts && topProducts.length > 0) { %> <%
+      topProducts.forEach(product => { %>
+      <% const displayImage = (product.images && product.images.length > 0) ? product.images[0] : product.image; %>
+      <div
+        class="bg-white rounded-lg shadow-lg hover:shadow-xl transition overflow-hidden"
+      >
+        <div class="bg-gray-200 h-64 flex items-center justify-center">
+          <% if (displayImage) { %>
+          <img
+            src="<%= displayImage %>"
+            alt="<%= product.name %>"
+            class="w-full h-full object-cover"
+          />
+          <% } else { %>
+          <span class="text-gray-400 text-6xl">📦</span>
+          <% } %>
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-lg mb-2"><%= product.name %></h3>
+          <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+            <%= product.description %>
+          </p>
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-blue-600 font-bold text-xl"
+              ><%= product.price.toLocaleString() %>₫</span
+            >
+            <span class="text-yellow-400"
+              >★ <%= product.rating.toFixed(1) %></span
+            >
+          </div>
+          <div class="flex gap-2">
+            <a
+              href="/product/<%= product._id %>"
+              class="flex-1 btn-primary text-center"
+              >Chi tiết</a
+            >
+            <button
+              class="flex-1 btn-secondary"
+              onclick="addToCart('<%= product._id %>')"
+            >
+              Thêm
+            </button>
+          </div>
+        </div>
+      </div>
+      <% }); %> <% } %>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="mb-12">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-3xl font-bold text-blue-600">Danh mục sản phẩm</h2>
+      <a href="/search" class="text-blue-600 font-semibold hover:underline">Xem tất cả</a>
+    </div>
+
+    <% if (categories && categories.length > 0) { %>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <% categories.forEach(category => { %>
+          <a
+            href="/category/<%= category._id %>"
+            class="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden border border-gray-100"
+          >
+            <div class="h-36 bg-gray-100 flex items-center justify-center">
+              <% if (category.image) { %>
+                <img
+                  src="<%= category.image %>"
+                  alt="<%= category.name %>"
+                  class="w-full h-full object-cover"
+                >
+              <% } else { %>
+                <span class="text-4xl text-gray-400">🖼️</span>
+              <% } %>
+            </div>
+            <div class="p-3">
+              <p class="font-semibold text-gray-800 line-clamp-1"><%= category.name %></p>
+              <p class="text-xs text-gray-500 line-clamp-2 mt-1"><%= category.description || 'Danh mục sản phẩm chất lượng' %></p>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="bg-white rounded-lg p-6 text-center text-gray-500">
+        Hiện chưa có danh mục nào
+      </div>
+    <% } %>
+  </section>
+</div>
+
+
+<script>
+  window.addEventListener('load', () => {
+    if (typeof Swiper !== 'undefined') {
+      new Swiper('#heroSwiper', {
+        loop: true,
+        autoplay: {
+          delay: 3500,
+          disableOnInteraction: false,
+        },
+        pagination: {
+          el: '.swiper-pagination',
+          clickable: true,
+        },
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+      });
+    }
+  });
+
+  function addToCart(productId) {
+    fetch("/cart/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: productId,
+        quantity: 1,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          notify("Đã thêm vào giỏ hàng", "success");
+        } else {
+          notify(data.error || "Lỗi", "error");
+        }
+      });
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
