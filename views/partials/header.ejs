@@ -1,3 +1,12 @@
+<%
+  const safeLatestNotifications =
+    typeof latestNotifications !== 'undefined' && Array.isArray(latestNotifications)
+      ? latestNotifications
+      : [];
+  const safeUnreadNotificationCount =
+    typeof unreadNotificationCount !== 'undefined' ? unreadNotificationCount : 0;
+%>
+
 <header class="bg-blue-600 text-white shadow-lg">
   <div class="container mx-auto px-4 py-4">
     <div class="flex justify-between items-center">
@@ -58,12 +67,12 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             <span class="hidden md:inline">Thông báo</span>
-            <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+            <% if (safeUnreadNotificationCount > 0) { %>
             <span
               id="notificationBellCount"
               class="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[1.25rem] h-5 px-1 flex items-center justify-center text-xs font-bold"
             >
-              <%= unreadNotificationCount > 99 ? '99+' : unreadNotificationCount %>
+              <%= safeUnreadNotificationCount > 99 ? '99+' : safeUnreadNotificationCount %>
             </span>
             <% } %>
           </button>
@@ -79,8 +88,8 @@
               </div>
 
               <div id="latestNotificationsList" class="max-h-96 overflow-y-auto">
-                <% if (Array.isArray(latestNotifications) && latestNotifications.length > 0) { %>
-                  <% latestNotifications.forEach(notification => { %>
+                <% if (safeLatestNotifications.length > 0) { %>
+                  <% safeLatestNotifications.forEach(notification => { %>
                     <a
                       href="<%= notification.order ? ('/order/' + notification.order) : '/user/notifications' %>"
                       data-notification-id="<%= notification._id %>"
@@ -95,7 +104,7 @@
               </div>
               <div
                 id="latestNotificationsEmpty"
-                class="px-4 py-10 text-center text-gray-500 <%= Array.isArray(latestNotifications) && latestNotifications.length > 0 ? 'hidden' : '' %>"
+                class="px-4 py-10 text-center text-gray-500 <%= safeLatestNotifications.length > 0 ? 'hidden' : '' %>"
               >
                 Chưa có thông báo nào
               </div>
@@ -205,7 +214,7 @@
     const MAX_ITEMS = 8;
     const SERVER_HISTORY = <%- JSON.stringify((typeof searchHistory !== 'undefined' && Array.isArray(searchHistory)) ? searchHistory : []) %>;
     const IS_LOGGED_IN = <%- JSON.stringify(!!user) %>;
-    const INITIAL_LATEST_NOTIFICATIONS = <%- JSON.stringify(Array.isArray(latestNotifications) ? latestNotifications : []) %>;
+    const INITIAL_LATEST_NOTIFICATIONS = <%- JSON.stringify(safeLatestNotifications) %>;
 
     function getHistory() {
       const serverHistory = Array.isArray(SERVER_HISTORY)
