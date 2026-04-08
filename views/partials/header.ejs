@@ -46,7 +46,76 @@
         </form>
       </div>
 
-      <nav class="flex items-center gap-6">
+      <nav class="flex items-center gap-4">
+        <div class="relative" id="notificationBellWrapper">
+          <button
+            type="button"
+            id="notificationBellBtn"
+            class="px-3 py-2 rounded hover:bg-blue-700 relative flex items-center gap-2"
+            aria-label="Thông báo"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span class="hidden md:inline">Thông báo</span>
+            <% if (typeof unreadNotificationCount !== 'undefined' && unreadNotificationCount > 0) { %>
+            <span
+              id="notificationBellCount"
+              class="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[1.25rem] h-5 px-1 flex items-center justify-center text-xs font-bold"
+            >
+              <%= unreadNotificationCount > 99 ? '99+' : unreadNotificationCount %>
+            </span>
+            <% } %>
+          </button>
+
+          <div
+            id="notificationDropdown"
+            class="hidden absolute right-0 mt-2 w-[90vw] max-w-[360px] bg-white text-black rounded shadow-xl border border-gray-200 z-50 overflow-hidden"
+          >
+            <% if (user) { %>
+              <div class="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
+                <h3 class="font-semibold">Thông báo mới nhận</h3>
+                <a href="/user/notifications" class="text-sm text-blue-600 hover:text-blue-800">Xem tất cả</a>
+              </div>
+
+              <div id="latestNotificationsList" class="max-h-96 overflow-y-auto">
+                <% if (Array.isArray(latestNotifications) && latestNotifications.length > 0) { %>
+                  <% latestNotifications.forEach(notification => { %>
+                    <a
+                      href="<%= notification.order ? ('/order/' + notification.order) : '/user/notifications' %>"
+                      data-notification-id="<%= notification._id %>"
+                      class="notification-item block px-4 py-3 border-b hover:bg-gray-50 <%= notification.isRead ? 'bg-white' : 'bg-blue-50' %>"
+                    >
+                      <div class="font-semibold text-sm text-gray-900"><%= notification.title %></div>
+                      <div class="text-sm text-gray-700 mt-1 line-clamp-2"><%= notification.message %></div>
+                      <div class="text-xs text-gray-500 mt-1"><%= new Date(notification.createdAt).toLocaleString('vi-VN') %></div>
+                    </a>
+                  <% }) %>
+                <% } %>
+              </div>
+              <div
+                id="latestNotificationsEmpty"
+                class="px-4 py-10 text-center text-gray-500 <%= Array.isArray(latestNotifications) && latestNotifications.length > 0 ? 'hidden' : '' %>"
+              >
+                Chưa có thông báo nào
+              </div>
+            <% } else { %>
+              <div class="px-6 py-10 text-center bg-gray-100 border-b">
+                <div class="w-20 h-20 bg-orange-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <p class="text-gray-700 text-lg">Đăng nhập để xem Thông báo</p>
+              </div>
+              <div class="grid grid-cols-2 text-center">
+                <a href="/auth/register" class="py-3 border-r hover:bg-gray-50">Đăng ký</a>
+                <a href="/auth/login" class="py-3 hover:bg-gray-50">Đăng nhập</a>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
         <% if (user) { %>
         <div class="relative group">
           <button class="px-4 py-2 rounded hover:bg-blue-700">
@@ -73,9 +142,10 @@
             >
           </div>
         </div>
-        <a href="/cart" class="px-4 py-2 rounded hover:bg-blue-700 relative">
+        <a href="/cart" id="cartNavLink" class="px-4 py-2 rounded hover:bg-blue-700 relative">
            Giỏ hàng <% if (cart && cart.length > 0) { %>
           <span
+            id="cartCountBadge"
             class="absolute -top-2 -right-2 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs"
           >
             <%= cart.length %>
@@ -134,6 +204,8 @@
     const STORAGE_KEY = 'searchHistory';
     const MAX_ITEMS = 8;
     const SERVER_HISTORY = <%- JSON.stringify((typeof searchHistory !== 'undefined' && Array.isArray(searchHistory)) ? searchHistory : []) %>;
+    const IS_LOGGED_IN = <%- JSON.stringify(!!user) %>;
+    const INITIAL_LATEST_NOTIFICATIONS = <%- JSON.stringify(Array.isArray(latestNotifications) ? latestNotifications : []) %>;
 
     function getHistory() {
       const serverHistory = Array.isArray(SERVER_HISTORY)
@@ -248,5 +320,241 @@
       listId: 'mobileSearchHistoryList',
       clearBtnId: 'mobileClearHistoryBtn'
     });
+
+    const notificationBellBtn = document.getElementById('notificationBellBtn');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationBellWrapper = document.getElementById('notificationBellWrapper');
+    const cartNavLink = document.getElementById('cartNavLink');
+    const latestNotificationsList = document.getElementById('latestNotificationsList');
+    const latestNotificationsEmpty = document.getElementById('latestNotificationsEmpty');
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDateTime(value) {
+      try {
+        return new Date(value).toLocaleString('vi-VN');
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function updateBellCount(count) {
+      const normalized = Number(count) || 0;
+      let badge = document.getElementById('notificationBellCount');
+
+      if (normalized <= 0) {
+        if (badge) {
+          badge.remove();
+        }
+        return;
+      }
+
+      if (!badge && notificationBellBtn) {
+        badge = document.createElement('span');
+        badge.id = 'notificationBellCount';
+        badge.className = 'absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[1.25rem] h-5 px-1 flex items-center justify-center text-xs font-bold';
+        notificationBellBtn.appendChild(badge);
+      }
+
+      if (badge) {
+        badge.textContent = normalized > 99 ? '99+' : String(normalized);
+      }
+    }
+
+    function renderLatestNotifications(notifications) {
+      if (!latestNotificationsList || !latestNotificationsEmpty) {
+        return;
+      }
+
+      const list = Array.isArray(notifications) ? notifications : [];
+      latestNotificationsList.innerHTML = '';
+
+      if (list.length === 0) {
+        latestNotificationsEmpty.classList.remove('hidden');
+        return;
+      }
+
+      latestNotificationsEmpty.classList.add('hidden');
+
+      list.forEach((notification) => {
+        const href = notification.order
+          ? `/order/${notification.order}`
+          : '/user/notifications';
+        const item = document.createElement('a');
+        item.href = href;
+        item.setAttribute('data-notification-id', notification._id);
+        item.className = `notification-item block px-4 py-3 border-b hover:bg-gray-50 ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`;
+        item.innerHTML = `
+          <div class="font-semibold text-sm text-gray-900">${escapeHtml(notification.title)}</div>
+          <div class="text-sm text-gray-700 mt-1 line-clamp-2">${escapeHtml(notification.message)}</div>
+          <div class="text-xs text-gray-500 mt-1">${escapeHtml(formatDateTime(notification.createdAt))}</div>
+        `;
+        latestNotificationsList.appendChild(item);
+      });
+    }
+
+    function showRealtimeToast(notification) {
+      const message = `${notification.title}: ${notification.message}`;
+      if (typeof notify === 'function') {
+        notify(message, 'success');
+        return;
+      }
+
+      const fallback = document.createElement('div');
+      fallback.className = 'fixed top-4 right-4 px-6 py-3 rounded shadow-lg text-white z-50 bg-green-500';
+      fallback.textContent = message;
+      document.body.appendChild(fallback);
+      setTimeout(() => fallback.remove(), 3000);
+    }
+
+    function updateCartCountBadge(cartCount) {
+      if (!cartNavLink) {
+        return;
+      }
+
+      const normalized = Number(cartCount) || 0;
+      let badge = document.getElementById('cartCountBadge');
+
+      if (normalized <= 0) {
+        if (badge) {
+          badge.remove();
+        }
+        return;
+      }
+
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'cartCountBadge';
+        badge.className = 'absolute -top-2 -right-2 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs';
+        cartNavLink.appendChild(badge);
+      }
+
+      badge.textContent = String(normalized > 99 ? '99+' : normalized);
+    }
+
+    async function pollRealtimeCartCount() {
+      if (!cartNavLink) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/cart/realtime-count', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+          return;
+        }
+
+        updateCartCountBadge(data.cartCount);
+      } catch (error) {
+        // Bỏ qua lỗi ngắt quãng mạng, lần poll sau sẽ đồng bộ lại.
+      }
+    }
+
+    let lastNotificationTimestamp = INITIAL_LATEST_NOTIFICATIONS.length > 0
+      ? INITIAL_LATEST_NOTIFICATIONS[0].createdAt
+      : new Date().toISOString();
+
+    async function pollRealtimeNotifications() {
+      if (!IS_LOGGED_IN) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/user/notifications/realtime?after=${encodeURIComponent(lastNotificationTimestamp)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+          return;
+        }
+
+        updateBellCount(data.unreadCount || 0);
+        renderLatestNotifications(data.latestNotifications || []);
+
+        if (Array.isArray(data.newNotifications) && data.newNotifications.length > 0) {
+          const sortedNotifications = [...data.newNotifications].sort((a, b) => {
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          });
+
+          sortedNotifications.forEach((notification) => {
+            showRealtimeToast(notification);
+          });
+
+          lastNotificationTimestamp = sortedNotifications[sortedNotifications.length - 1].createdAt;
+        } else if (Array.isArray(data.latestNotifications) && data.latestNotifications.length > 0) {
+          lastNotificationTimestamp = data.latestNotifications[0].createdAt;
+        }
+      } catch (error) {
+        // Không làm gián đoạn trải nghiệm khi polling thất bại tạm thời.
+      }
+    }
+
+    if (notificationBellBtn && notificationDropdown && notificationBellWrapper) {
+      notificationBellBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        notificationDropdown.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!notificationBellWrapper.contains(event.target)) {
+          notificationDropdown.classList.add('hidden');
+        }
+      });
+
+      notificationDropdown.addEventListener('click', (event) => {
+        const item = event.target.closest('.notification-item');
+        if (!item) {
+          return;
+        }
+
+        const notificationId = item.getAttribute('data-notification-id');
+        if (!notificationId) {
+          return;
+        }
+
+        fetch(`/user/notifications/${notificationId}/read`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          keepalive: true,
+        }).catch(() => {
+          // Không chặn điều hướng nếu request đánh dấu đã đọc thất bại.
+        });
+      });
+    }
+
+    if (IS_LOGGED_IN) {
+      setInterval(pollRealtimeNotifications, 10000);
+    }
+
+    if (cartNavLink) {
+      setInterval(pollRealtimeCartCount, 4000);
+    }
   })();
 </script>

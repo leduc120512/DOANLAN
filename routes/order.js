@@ -5,6 +5,7 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const Comment = require("../models/Comment");
 const Coupon = require("../models/Coupon");
+const Notification = require("../models/Notification");
 
 function getCartSubtotal(cart) {
   return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -272,6 +273,15 @@ router.post("/:id/cancel", isAuthenticated, async (req, res) => {
 
     order.status = "Cancelled";
     await order.save();
+
+    const shortOrderId = order._id.toString().slice(-8).toUpperCase();
+    await Notification.create({
+      user: order.user,
+      order: order._id,
+      status: "Cancelled",
+      title: "Đơn hàng đã hủy",
+      message: `Bạn đã hủy đơn #${shortOrderId} thành công.`,
+    });
 
     res.json({ success: true });
   } catch (error) {

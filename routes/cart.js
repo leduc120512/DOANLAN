@@ -58,6 +58,26 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Realtime cart count for header badge
+router.get("/realtime-count", (req, res) => {
+  try {
+    const cart = req.session.cart || [];
+    const cartCount = cart.length;
+    const totalQuantity = cart.reduce(
+      (sum, item) => sum + (Number(item.quantity) || 0),
+      0,
+    );
+
+    return res.json({
+      success: true,
+      cartCount,
+      totalQuantity,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // Cập nhật số lượng
 router.post("/update", (req, res) => {
   try {

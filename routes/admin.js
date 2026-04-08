@@ -8,6 +8,7 @@ const Order = require("../models/Order");
 const Banner = require("../models/Banner");
 const Coupon = require("../models/Coupon");
 const ProductReport = require("../models/ProductReport");
+const Notification = require("../models/Notification");
 
 function getUploadErrorMessage(error) {
   if (!error) {
@@ -48,6 +49,42 @@ function logUploadError(req, error) {
     message: error?.message || null,
     stack: error?.stack || null,
   });
+}
+
+function getOrderStatusNotification(status, orderId) {
+  const shortOrderId = String(orderId || "")
+    .slice(-8)
+    .toUpperCase();
+
+  if (status === "Processing") {
+    return {
+      title: "Đơn hàng đã được duyệt",
+      message: `Đơn #${shortOrderId} đã được shop xác nhận và chuẩn bị giao.`,
+    };
+  }
+
+  if (status === "Shipped") {
+    return {
+      title: "Đơn hàng đang được vận chuyển",
+      message: `Đơn #${shortOrderId} đang trên đường giao đến bạn.`,
+    };
+  }
+
+  if (status === "Delivered") {
+    return {
+      title: "Đơn hàng giao thành công",
+      message: `Đơn #${shortOrderId} đã giao thành công. Cảm ơn bạn đã mua hàng.`,
+    };
+  }
+
+  if (status === "Cancelled") {
+    return {
+      title: "Đơn hàng đã bị hủy",
+      message: `Đơn #${shortOrderId} đã bị hủy. Nếu cần hỗ trợ, vui lòng liên hệ shop.`,
+    };
+  }
+
+  return null;
 }
 
 // Dashboard admin
@@ -465,13 +502,38 @@ router.post("/orders/:id/status", isAdmin, async (req, res) => {
       return res.status(400).json({ error: "Trạng thái không hợp lệ" });
     }
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status, updatedAt: new Date() },
-      { new: true },
-    );
+    const existingOrder = await Order.findById(req.params.id);
+    if (!existingOrder) {
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng" });
+    }
 
-    res.json({ success: true, order });
+    const previousStatus = existingOrder.status;
+    existingOrder.status = status;
+    existingOrder.updatedAt = new Date();
+    await existingOrder.save();
+
+    if (existingOrder.user && existingOrder.status !== "Pending") {
+      const notificationInfo = getOrderStatusNotification(
+        existingOrder.status,
+        existingOrder._id,
+      );
+
+      if (notificationInfo) {
+        const wasStatusChanged = existingOrder.status !== previousStatus;
+
+        if (wasStatusChanged) {
+          await Notification.create({
+            user: existingOrder.user,
+            order: existingOrder._id,
+            status: existingOrder.status,
+            title: notificationInfo.title,
+            message: notificationInfo.message,
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, order: existingOrder });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

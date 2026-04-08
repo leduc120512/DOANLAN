@@ -5,6 +5,7 @@ const path = require("path");
 require("dotenv").config();
 
 const Category = require("./models/Category");
+const Notification = require("./models/Notification");
 
 const app = express();
 
@@ -64,10 +65,26 @@ app.use(async (req, res, next) => {
     res.locals.searchHistory = Array.isArray(req.session.searchHistory)
       ? req.session.searchHistory
       : [];
+    res.locals.unreadNotificationCount = 0;
+    res.locals.latestNotifications = [];
 
     // Categories cho header
     const categories = await Category.find().lean();
     res.locals.categories = categories;
+
+    if (req.session.user && req.session.user.id) {
+      res.locals.unreadNotificationCount = await Notification.countDocuments({
+        user: req.session.user.id,
+        isRead: false,
+      });
+
+      res.locals.latestNotifications = await Notification.find({
+        user: req.session.user.id,
+      })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean();
+    }
 
     // Custom layout wrapper
     const originalRender = res.render;
