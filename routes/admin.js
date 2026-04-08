@@ -9,6 +9,47 @@ const Banner = require("../models/Banner");
 const Coupon = require("../models/Coupon");
 const ProductReport = require("../models/ProductReport");
 
+function getUploadErrorMessage(error) {
+  if (!error) {
+    return "Upload thất bại";
+  }
+
+  if (error.code === "LIMIT_FILE_SIZE") {
+    return "Mỗi ảnh tối đa 5MB";
+  }
+
+  if (error.code === "LIMIT_FILE_COUNT") {
+    return "Tối đa 8 ảnh cho mỗi sản phẩm";
+  }
+
+  if (error.code === "LIMIT_UNEXPECTED_FILE") {
+    return "Tên field upload không hợp lệ hoặc vượt quá số ảnh cho phép";
+  }
+
+  return error.message || "Upload thất bại";
+}
+
+function logUploadRequest(req) {
+  console.error("[UPLOAD_DEBUG] request", {
+    method: req.method,
+    url: req.originalUrl,
+    contentType: req.headers["content-type"] || null,
+    contentLength: req.headers["content-length"] || null,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+  });
+}
+
+function logUploadError(req, error) {
+  console.error("[UPLOAD_DEBUG] error", {
+    method: req.method,
+    url: req.originalUrl,
+    code: error?.code || null,
+    field: error?.field || null,
+    message: error?.message || null,
+    stack: error?.stack || null,
+  });
+}
+
 // Dashboard admin
 router.get("/", isAdmin, async (req, res) => {
   try {
@@ -75,36 +116,65 @@ router.get("/products", isAdmin, async (req, res) => {
 // Trang thêm sản phẩm
 router.get("/products/add", isAdmin, async (req, res) => {
   const categories = await Category.find();
-  res.render("admin/products/add", { categories });
+  res.render("admin/products/add", { categories, error: null });
 });
 
 // Xử lý thêm sản phẩm
-router.post(
-  "/products/add",
-  isAdmin,
-  upload.array("images", 8),
-  async (req, res) => {
-    const { name, description, price, category, stock } = req.body;
-    const uploadedImages = Array.isArray(req.files)
-      ? req.files.map((file) => "/uploads/" + file.filename)
-      : [];
+router.post("/products/add", isAdmin, async (req, res) => {
+  upload.array("images", 8)(req, res, async (uploadError) => {
+    if (uploadError) {
+      logUploadRequest(req);
+      logUploadError(req, uploadError);
+      const categories = await Category.find();
 
-    const product = new Product({
-      name,
-      description,
-      price: Number(price),
-      category,
-      stock: Number(stock),
-      images: uploadedImages,
-      image: uploadedImages[0] || null,
-    });
+      return res.status(400).render("admin/products/add", {
+        categories,
+        error: {
+          code: uploadError.code || "UPLOAD_ERROR",
+          message: getUploadErrorMessage(uploadError),
+          rawMessage: uploadError.message || null,
+          field: uploadError.field || null,
+        },
+      });
+    }
 
-    await product.save();
+    try {
+      const { name, description, price, category, stock } = req.body;
+      const uploadedImages = Array.isArray(req.files)
+        ? req.files.map((file) => "/uploads/" + file.filename)
+        : [];
 
-    // redirect kèm thông báo
-    res.redirect("/admin/products?success=add");
-  },
-);
+      const product = new Product({
+        name,
+        description,
+        price: Number(price),
+        category,
+        stock: Number(stock),
+        images: uploadedImages,
+        image: uploadedImages[0] || null,
+      });
+
+      await product.save();
+
+      // redirect kèm thông báo
+      return res.redirect("/admin/products?success=add");
+    } catch (error) {
+      logUploadRequest(req);
+      logUploadError(req, error);
+      const categories = await Category.find();
+
+      return res.status(500).render("admin/products/add", {
+        categories,
+        error: {
+          code: error.code || "CREATE_PRODUCT_ERROR",
+          message: error.message || "Không thể tạo sản phẩm",
+          rawMessage: error.message || null,
+          field: null,
+        },
+      });
+    }
+  });
+});
 
 // ================= EDIT PAGE =================
 router.get("/products/:id/edit", isAdmin, async (req, res) => {
@@ -121,46 +191,59 @@ router.get("/products/:id/edit", isAdmin, async (req, res) => {
 });
 
 // Xử lý sửa sản phẩm
-router.post(
-  "/products/:id/edit",
-  isAdmin,
-  upload.array("images", 8),
-  async (req, res) => {
-    const { name, description, price, category, stock } = req.body;
-    const uploadedImages = Array.isArray(req.files)
-      ? req.files.map((file) => "/uploads/" + file.filename)
-      : [];
-
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res
-        .status(404)
-        .render("error", { message: "Không tìm thấy sản phẩm" });
+router.post("/products/:id/edit", isAdmin, async (req, res) => {
+  upload.array("images", 8)(req, res, async (uploadError) => {
+    if (uploadError) {
+      logUploadRequest(req);
+      logUploadError(req, uploadError);
+      return res.status(400).render("error", {
+        message: getUploadErrorMessage(uploadError),
+      });
     }
 
-    const existingImages =
-      Array.isArray(product.images) && product.images.length > 0
-        ? [...product.images]
-        : product.image
-          ? [product.image]
-          : [];
-    const mergedImages = existingImages.concat(uploadedImages);
+    try {
+      const { name, description, price, category, stock } = req.body;
+      const uploadedImages = Array.isArray(req.files)
+        ? req.files.map((file) => "/uploads/" + file.filename)
+        : [];
 
-    const updateData = {
-      name,
-      description,
-      price: Number(price),
-      category,
-      stock: Number(stock),
-      images: mergedImages,
-      image: mergedImages[0] || null,
-    };
+      const product = await Product.findById(req.params.id);
+      if (!product) {
+        return res
+          .status(404)
+          .render("error", { message: "Không tìm thấy sản phẩm" });
+      }
 
-    await Product.findByIdAndUpdate(req.params.id, updateData);
+      const existingImages =
+        Array.isArray(product.images) && product.images.length > 0
+          ? [...product.images]
+          : product.image
+            ? [product.image]
+            : [];
+      const mergedImages = existingImages.concat(uploadedImages);
 
-    res.redirect("/admin/products?success=edit");
-  },
-);
+      const updateData = {
+        name,
+        description,
+        price: Number(price),
+        category,
+        stock: Number(stock),
+        images: mergedImages,
+        image: mergedImages[0] || null,
+      };
+
+      await Product.findByIdAndUpdate(req.params.id, updateData);
+
+      return res.redirect("/admin/products?success=edit");
+    } catch (error) {
+      logUploadRequest(req);
+      logUploadError(req, error);
+      return res.status(500).render("error", {
+        message: error.message || "Không thể cập nhật sản phẩm",
+      });
+    }
+  });
+});
 
 router.post("/products/:id/images/delete", isAdmin, async (req, res) => {
   const { imageUrl } = req.body;
