@@ -1,19 +1,21 @@
 <div class="py-8">
   <h1 class="text-3xl font-bold mb-6 text-blue-600">Thêm sản phẩm</h1>
 
-  <% if (error) { %>
+  <% const uploadError = typeof error !== 'undefined' ? error : null; %>
+
+  <% if (uploadError) { %>
     <div class="mb-4 p-3 rounded border border-red-300 bg-red-50 text-red-700">
-      <div><strong>Lỗi upload:</strong> <%= error.message %></div>
-      <% if (error.code) { %>
-        <div>Mã lỗi: <%= error.code %></div>
+      <div><strong>Lỗi upload:</strong> <%= uploadError.message %></div>
+      <% if (uploadError.code) { %>
+        <div>Mã lỗi: <%= uploadError.code %></div>
       <% } %>
-      <% if (error.field) { %>
-        <div>Field: <%= error.field %></div>
+      <% if (uploadError.field) { %>
+        <div>Field: <%= uploadError.field %></div>
       <% } %>
     </div>
 
     <script>
-      console.error("[UPLOAD_DEBUG] add-product", <%- JSON.stringify(error || null) %>);
+      console.error("[UPLOAD_DEBUG] add-product", <%- JSON.stringify(uploadError || null) %>);
     </script>
   <% } %>
 
