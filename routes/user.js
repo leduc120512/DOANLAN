@@ -18,11 +18,6 @@ router.get("/notifications", isAuthenticated, async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    await Notification.updateMany(
-      { user: req.session.user.id, isRead: false },
-      { $set: { isRead: true } },
-    );
-
     res.render("user/notifications", {
       title: "Thông báo của tôi",
       notifications,
