@@ -47,6 +47,10 @@ MONGODB_URI=mongodb://localhost:27017/fan-store
 PORT=3000
 SESSION_SECRET=your_secret_key_here
 NODE_ENV=development
+APP_URL=http://localhost:3000
+EMAIL_USER=your_email@gmail.com
+EMAIL_APP_PASSWORD=your_gmail_app_password
+EMAIL_FROM=your_email@gmail.com
 ```
 
 ### 4. Seed dữ liệu mẫu
