@@ -1,4 +1,6 @@
 <div class="py-8">
+  <% const showHomeBanner = false; %>
+  <% if (showHomeBanner) { %>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <!-- Hero Swiper Banner -->
@@ -68,6 +70,7 @@
       <div class="swiper-button-next"></div>
     </div>
   </div>
+  <% } %>
 
   <!-- Top Products Section -->
   <section class="mb-12">
@@ -167,7 +170,7 @@
 
 <script>
   window.addEventListener('load', () => {
-    if (typeof Swiper !== 'undefined') {
+    if (document.getElementById('heroSwiper') && typeof Swiper !== 'undefined') {
       new Swiper('#heroSwiper', {
         loop: true,
         autoplay: {
@@ -200,6 +203,9 @@
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
+          if (typeof updateCartCountBadge === "function") {
+            updateCartCountBadge(data.cartCount);
+          }
           notify("Đã thêm vào giỏ hàng", "success");
         } else {
           notify(data.error || "Lỗi", "error");
@@ -207,4 +213,6 @@
       });
   }
 </script>
+<% if (showHomeBanner) { %>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<% } %>

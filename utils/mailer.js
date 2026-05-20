@@ -1,8 +1,9 @@
 const nodemailer = require("nodemailer");
 
 function getMailConfig() {
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_APP_PASSWORD;
+  const user = (process.env.EMAIL_USER || "").trim();
+  const pass = (process.env.EMAIL_APP_PASSWORD || "").replace(/\s/g, "");
+  const from = (process.env.EMAIL_FROM || user).trim();
 
   if (!user || !pass) {
     return null;
@@ -11,7 +12,7 @@ function getMailConfig() {
   return {
     user,
     pass,
-    from: process.env.EMAIL_FROM || user,
+    from,
   };
 }
 

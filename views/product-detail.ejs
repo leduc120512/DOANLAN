@@ -300,7 +300,9 @@
 
       if (data.success) {
         notify('Đã thêm vào giỏ hàng thành công!', 'success');
-        setTimeout(() => location.reload(), 1000);
+        if (typeof updateCartCountBadge === 'function') {
+          updateCartCountBadge(data.cartCount);
+        }
       } else {
         notify(data.error || 'Không thể thêm sản phẩm', 'error');
       }
