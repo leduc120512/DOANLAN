@@ -63,16 +63,23 @@
         <div class="space-y-6">
           <% if (order.items && order.items.length > 0) { %> <%
           order.items.forEach(item => { %>
+          <%
+            const itemImage = item.image || item.product?.mainImage || item.product?.image || item.product?.images?.[0] || null;
+            const itemName = item.name || item.product?.name || 'Sản phẩm đã xóa';
+          %>
           <div
             class="flex flex-col sm:flex-row sm:items-center gap-4 border-b pb-6 last:border-b-0 last:pb-0"
           >
-            <div class="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0">
-              <!-- Nếu có ảnh sản phẩm thì thêm ở đây -->
-              <!-- <img src="<%= item.product?.image || '/placeholder.jpg' %>" alt="" class="w-full h-full object-cover rounded-lg"> -->
+            <div class="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
+              <% if (itemImage) { %>
+                <img src="<%= itemImage %>" alt="<%= itemName %>" class="w-full h-full object-cover">
+              <% } else { %>
+                <span class="text-3xl text-gray-400">📦</span>
+              <% } %>
             </div>
             <div class="flex-1">
               <h3 class="font-semibold text-lg">
-                <%= item.product?.name || 'Sản phẩm đã xóa' %>
+                <%= itemName %>
               </h3>
               <p class="text-gray-600 mt-1">
                 Giá: <%= item.price ? item.price.toLocaleString('vi-VN') : 0 %>₫

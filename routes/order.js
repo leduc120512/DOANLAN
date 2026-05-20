@@ -118,6 +118,8 @@ router.post("/create", isAuthenticated, async (req, res) => {
           product: item.productId,
           quantity: item.quantity,
           price: item.price,
+          name: product.name,
+          image: product.mainImage || product.image || product.images?.[0] || null,
         });
         subtotal += item.price * item.quantity;
       }

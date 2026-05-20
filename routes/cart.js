@@ -27,7 +27,7 @@ router.post("/add", async (req, res) => {
         productId,
         name: product.name,
         price: product.price,
-        image: product.mainImage,
+        image: product.mainImage || product.image || product.images?.[0] || null,
         quantity: parseInt(quantity) || 1,
       });
     }
