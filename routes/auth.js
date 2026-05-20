@@ -2,7 +2,19 @@ const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
 const User = require("../models/User");
-const { sendResetPasswordEmail } = require("../utils/mailer");
+const { sendNewPasswordEmail } = require("../utils/mailer");
+
+function generateTemporaryPassword() {
+  const alphabet =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  let password = "";
+
+  for (let i = 0; i < 10; i += 1) {
+    password += alphabet[crypto.randomInt(alphabet.length)];
+  }
+
+  return `${password}A1!`;
+}
 
 function renderLogin(res, { error = null, success = null } = {}) {
   return res.render("auth/login", {
@@ -77,7 +89,7 @@ router.get("/forgot-password", (req, res) => {
   });
 });
 
-// Gui email dat lai mat khau
+// Tao mat khau moi va gui qua email
 router.post("/forgot-password", async (req, res) => {
   const email = (req.body.email || "").trim().toLowerCase();
 
@@ -94,23 +106,16 @@ router.post("/forgot-password", async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user) {
-      const resetToken = crypto.randomBytes(32).toString("hex");
-      const hashedToken = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
+      const temporaryPassword = generateTemporaryPassword();
 
-      user.resetPasswordToken = hashedToken;
-      user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+      user.password = temporaryPassword;
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
       await user.save();
 
-      const baseUrl =
-        process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-      const resetUrl = `${baseUrl}/auth/reset-password/${resetToken}`;
-
-      await sendResetPasswordEmail({
+      await sendNewPasswordEmail({
         to: user.email,
-        resetUrl,
+        temporaryPassword,
       });
     }
 
@@ -118,7 +123,7 @@ router.post("/forgot-password", async (req, res) => {
       title: "Quen mat khau",
       error: null,
       success:
-        "Neu email ton tai trong he thong, chung toi da gui lien ket dat lai mat khau.",
+        "Neu email ton tai trong he thong, chung toi da tao mat khau moi va gui qua email.",
       email: "",
     });
   } catch (error) {

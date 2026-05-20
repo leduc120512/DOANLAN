@@ -32,7 +32,7 @@ function createTransporter() {
   });
 }
 
-async function sendResetPasswordEmail({ to, resetUrl }) {
+async function sendNewPasswordEmail({ to, temporaryPassword }) {
   const config = getMailConfig();
 
   if (!config) {
@@ -44,16 +44,17 @@ async function sendResetPasswordEmail({ to, resetUrl }) {
   await transporter.sendMail({
     from: config.from,
     to,
-    subject: "Dat lai mat khau",
+    subject: "Mat khau moi cua ban",
     html: `
       <p>Ban vua yeu cau dat lai mat khau.</p>
-      <p>Vui long bam vao lien ket ben duoi de tao mat khau moi. Lien ket co hieu luc trong 1 gio.</p>
-      <p><a href="${resetUrl}">Dat lai mat khau</a></p>
+      <p>He thong da tao mat khau moi cho tai khoan cua ban:</p>
+      <p><strong>${temporaryPassword}</strong></p>
+      <p>Vui long dang nhap bang mat khau nay va doi lai mat khau sau khi dang nhap.</p>
       <p>Neu ban khong yeu cau, co the bo qua email nay.</p>
     `,
   });
 }
 
 module.exports = {
-  sendResetPasswordEmail,
+  sendNewPasswordEmail,
 };
