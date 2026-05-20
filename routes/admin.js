@@ -87,9 +87,32 @@ function getOrderStatusNotification(status, orderId) {
   return null;
 }
 
+function getRecentMonths(count) {
+  const months = [];
+  const now = new Date();
+
+  for (let index = count - 1; index >= 0; index -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    months.push({
+      key: `${year}-${String(month).padStart(2, "0")}`,
+      label: `${String(month).padStart(2, "0")}/${year}`,
+      year,
+      month,
+      startDate: date,
+    });
+  }
+
+  return months;
+}
+
 // Dashboard admin
 router.get("/", isAdmin, async (req, res) => {
   try {
+    const recentMonths = getRecentMonths(6);
+    const chartStartDate = recentMonths[0].startDate;
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
     const totalCategories = await Category.countDocuments();
@@ -98,12 +121,60 @@ router.get("/", isAdmin, async (req, res) => {
     const totalReports = await ProductReport.countDocuments();
     const totalRevenue = await Order.aggregate([
       {
+        $match: {
+          status: "Delivered",
+        },
+      },
+      {
         $group: {
           _id: null,
           total: { $sum: "$totalPrice" },
         },
       },
     ]);
+    const monthlyOrders = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: chartStartDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          orders: { $sum: 1 },
+          revenue: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "Delivered"] },
+                "$totalPrice",
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+    const ordersByStatus = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const monthlyMap = monthlyOrders.reduce((result, item) => {
+      const key = `${item._id.year}-${String(item._id.month).padStart(2, "0")}`;
+      result[key] = item;
+      return result;
+    }, {});
+    const statusMap = ordersByStatus.reduce((result, item) => {
+      result[item._id] = item.count;
+      return result;
+    }, {});
 
     res.render("admin/dashboard", {
       title: "Admin Dashboard",
@@ -115,6 +186,29 @@ router.get("/", isAdmin, async (req, res) => {
         totalCoupons,
         totalReports,
         totalRevenue: totalRevenue[0]?.total || 0,
+      },
+      chartData: {
+        months: recentMonths.map((month) => month.label),
+        orderCounts: recentMonths.map(
+          (month) => monthlyMap[month.key]?.orders || 0,
+        ),
+        revenue: recentMonths.map(
+          (month) => monthlyMap[month.key]?.revenue || 0,
+        ),
+        statusLabels: [
+          "Pending",
+          "Processing",
+          "Shipped",
+          "Delivered",
+          "Cancelled",
+        ],
+        statusCounts: [
+          "Pending",
+          "Processing",
+          "Shipped",
+          "Delivered",
+          "Cancelled",
+        ].map((status) => statusMap[status] || 0),
       },
     });
   } catch (error) {

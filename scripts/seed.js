@@ -161,6 +161,8 @@ async function seed() {
     console.log('Tạo products thành công');
 
     // Tạo orders
+    const generatedOrders = [];
+
     const order1 = await Order.create({
       user: normalUser1._id,
       items: [
@@ -170,12 +172,87 @@ async function seed() {
           price: products[0].price
         }
       ],
+      subtotalPrice: products[0].price,
       totalPrice: products[0].price,
       status: 'Delivered',
       customerName: normalUser1.fullName,
       customerPhone: normalUser1.phone,
-      customerAddress: normalUser1.address
+      customerAddress: normalUser1.address,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
+
+    const customers = [normalUser1, normalUser2];
+    const statuses = [
+      'Pending',
+      'Processing',
+      'Shipped',
+      'Delivered',
+      'Delivered',
+      'Delivered',
+      'Cancelled'
+    ];
+
+    for (let index = 0; index < 70; index += 1) {
+      const customer = customers[index % customers.length];
+      const status = statuses[index % statuses.length];
+      const createdAt = new Date();
+      createdAt.setDate(createdAt.getDate() - (index + 1) * 3);
+      createdAt.setHours(9 + (index % 8), 15, 0, 0);
+
+      const firstProduct = products[index % products.length];
+      const secondProduct = products[(index + 3) % products.length];
+      const items = [
+        {
+          product: firstProduct._id,
+          quantity: (index % 3) + 1,
+          price: firstProduct.price
+        }
+      ];
+
+      if (index % 2 === 0) {
+        items.push({
+          product: secondProduct._id,
+          quantity: (index % 2) + 1,
+          price: secondProduct.price
+        });
+      }
+
+      const subtotalPrice = items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+      const hasCoupon = index % 5 === 0;
+      const discountAmount = hasCoupon
+        ? Math.min(250000, Math.round(subtotalPrice * 0.08))
+        : 0;
+
+      generatedOrders.push({
+        user: customer._id,
+        items,
+        subtotalPrice,
+        discountAmount,
+        couponCode: hasCoupon ? 'SEED8' : null,
+        couponInfo: hasCoupon
+          ? {
+              discountType: 'percent',
+              discountValue: 8
+            }
+          : {
+              discountType: null,
+              discountValue: 0
+            },
+        totalPrice: subtotalPrice - discountAmount,
+        status,
+        customerName: customer.fullName,
+        customerPhone: customer.phone,
+        customerAddress: customer.address,
+        createdAt,
+        updatedAt: createdAt
+      });
+    }
+
+    await Order.create(generatedOrders);
 
     const order2 = await Order.create({
       user: normalUser2._id,
@@ -191,11 +268,14 @@ async function seed() {
           price: products[4].price
         }
       ],
+      subtotalPrice: products[1].price * 2 + products[4].price,
       totalPrice: products[1].price * 2 + products[4].price,
       status: 'Processing',
       customerName: normalUser2.fullName,
       customerPhone: normalUser2.phone,
-      customerAddress: normalUser2.address
+      customerAddress: normalUser2.address,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
     console.log('Tạo orders thành công');
