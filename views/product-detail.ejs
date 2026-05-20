@@ -1,3 +1,7 @@
+<%
+  const isLoggedInUser = Boolean(user && (user.id || user._id));
+  const canFeedback = typeof canSubmitProductFeedback !== 'undefined' && canSubmitProductFeedback;
+%>
 <div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
     <!-- Product Image Section -->
@@ -159,7 +163,7 @@
     <% } %>
 
     <!-- Comment Form -->
-    <% if (user && user._id) { %>
+    <% if (isLoggedInUser && canFeedback) { %>
       <div class="mt-10 pt-8 border-t border-gray-200">
         <h3 class="text-xl font-bold mb-6 text-gray-800">Viết đánh giá của bạn</h3>
         
@@ -202,6 +206,12 @@
           </button>
         </form>
       </div>
+    <% } else if (isLoggedInUser) { %>
+      <div class="mt-10 pt-8 border-t border-gray-200 bg-yellow-50 p-6 rounded-xl text-center">
+        <p class="text-gray-700 text-lg">
+          Bạn chỉ có thể đánh giá sau khi đơn hàng đã giao thành công.
+        </p>
+      </div>
     <% } else { %>
       <div class="mt-10 pt-8 border-t border-gray-200 bg-blue-50 p-6 rounded-xl text-center">
         <p class="text-gray-700 text-lg">
@@ -217,7 +227,7 @@
         <span class="text-sm text-gray-500">Gửi khi có thông tin sai hoặc cần kiểm tra</span>
       </div>
 
-      <% if (user && user._id) { %>
+      <% if (isLoggedInUser && canFeedback) { %>
         <form id="reportForm" class="grid grid-cols-1 gap-4 md:grid-cols-2" onsubmit="submitProductReport(event, '<%= product._id %>')">
           <div>
             <label class="block text-gray-700 font-medium mb-2">Lý do báo cáo</label>
@@ -239,6 +249,12 @@
             </button>
           </div>
         </form>
+      <% } else if (isLoggedInUser) { %>
+        <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-6 text-center">
+          <p class="text-gray-700">
+            Bạn chỉ có thể báo cáo sản phẩm sau khi mua hàng thành công.
+          </p>
+        </div>
       <% } else { %>
         <div class="bg-red-50 border border-red-100 rounded-xl p-6 text-center">
           <p class="text-gray-700">

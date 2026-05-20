@@ -151,6 +151,7 @@
             >
           </div>
         </div>
+        <% if (user.role !== 'admin') { %>
         <a href="/cart" id="cartNavLink" class="px-4 py-2 rounded hover:bg-blue-700 relative">
            Giỏ hàng <% if (cart && cart.length > 0) { %>
           <span
@@ -161,6 +162,7 @@
           </span>
           <% } %>
         </a>
+        <% } %>
         <% } else { %>
         <a href="/auth/login" class="px-4 py-2 rounded hover:bg-blue-700"
           >Đăng nhập</a

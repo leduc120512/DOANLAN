@@ -5,6 +5,7 @@ const Category = require("../models/Category");
 const Banner = require("../models/Banner");
 const mongoose = require("mongoose");
 const ProductReport = require("../models/ProductReport");
+const Order = require("../models/Order");
 
 const SEARCH_HISTORY_LIMIT = 10;
 
@@ -180,11 +181,22 @@ router.get("/product/:productKey", async (req, res) => {
         .render("error", { message: "Không tìm thấy sản phẩm" });
     }
 
+    const hasDeliveredPurchase = req.session.user?.id
+      ? Boolean(
+          await Order.exists({
+            user: req.session.user.id,
+            "items.product": product._id,
+            status: "Delivered",
+          }),
+        )
+      : false;
+
     res.render("product-detail", {
       title: product.name,
       product,
       categories,
       comments,
+      canSubmitProductFeedback: hasDeliveredPurchase,
     });
   } catch (error) {
     res.status(500).render("error", { message: error.message });
@@ -209,6 +221,18 @@ router.post("/product/:productId/report", async (req, res) => {
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+    }
+
+    const deliveredOrder = await Order.findOne({
+      user: req.session.user.id,
+      "items.product": productId,
+      status: "Delivered",
+    });
+
+    if (!deliveredOrder) {
+      return res.status(403).json({
+        error: "Chỉ có thể báo cáo sau khi mua hàng thành công",
+      });
     }
 
     await ProductReport.create({

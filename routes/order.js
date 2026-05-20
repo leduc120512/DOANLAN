@@ -311,19 +311,13 @@ router.post("/:productId/comment", isAuthenticated, async (req, res) => {
     const order = await Order.findOne({
       user: req.session.user.id,
       "items.product": productId,
-      status: { $ne: "Cancelled" },
+      status: "Delivered",
     });
 
     if (!order) {
       return res.status(403).json({
         error:
-          "Bạn chỉ có thể bình luận khi đã mua và nhận sản phẩm thành công",
-      });
-    }
-
-    if (order.status !== "Delivered" && order.status !== "Completed") {
-      return res.status(403).json({
-        error: "Chỉ có thể đánh giá khi đơn hàng đã giao thành công",
+          "Chỉ có thể đánh giá sau khi mua hàng thành công",
       });
     }
 

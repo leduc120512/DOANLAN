@@ -5,7 +5,6 @@ const upload = require("../middleware/upload");
 const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Order = require("../models/Order");
-const Banner = require("../models/Banner");
 const Coupon = require("../models/Coupon");
 const ProductReport = require("../models/ProductReport");
 const Notification = require("../models/Notification");
@@ -116,7 +115,6 @@ router.get("/", isAdmin, async (req, res) => {
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
     const totalCategories = await Category.countDocuments();
-    const totalBanners = await Banner.countDocuments();
     const totalCoupons = await Coupon.countDocuments();
     const totalReports = await ProductReport.countDocuments();
     const totalRevenue = await Order.aggregate([
@@ -182,7 +180,6 @@ router.get("/", isAdmin, async (req, res) => {
         totalProducts,
         totalOrders,
         totalCategories,
-        totalBanners,
         totalCoupons,
         totalReports,
         totalRevenue: totalRevenue[0]?.total || 0,
@@ -628,111 +625,6 @@ router.post("/orders/:id/status", isAdmin, async (req, res) => {
     }
 
     res.json({ success: true, order: existingOrder });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== QUẢN LÝ BANNER ==========
-router.get("/banners", isAdmin, async (req, res) => {
-  try {
-    const banners = await Banner.find().sort({ sortOrder: 1, createdAt: -1 });
-    res.render("admin/banners/list", {
-      title: "Quản lý banner",
-      banners,
-    });
-  } catch (error) {
-    res.status(500).render("error", { message: error.message });
-  }
-});
-
-router.post(
-  "/banners/add",
-  isAdmin,
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      const { title, subtitle, link, sortOrder } = req.body;
-
-      if (!title || !req.file) {
-        return res
-          .status(400)
-          .json({ error: "Cần nhập tiêu đề và chọn ảnh banner" });
-      }
-
-      const banner = new Banner({
-        title: title.trim(),
-        subtitle: (subtitle || "").trim(),
-        link: (link || "/search").trim(),
-        sortOrder: Number(sortOrder) || 0,
-        image: "/uploads/" + req.file.filename,
-        isActive: true,
-      });
-
-      await banner.save();
-      res.json({ success: true, banner });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
-
-router.post(
-  "/banners/:id/edit",
-  isAdmin,
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      const { title, subtitle, link, sortOrder, isActive } = req.body;
-      const updateData = {
-        title: (title || "").trim(),
-        subtitle: (subtitle || "").trim(),
-        link: (link || "/search").trim(),
-        sortOrder: Number(sortOrder) || 0,
-        isActive: isActive === "true" || isActive === true || isActive === "on",
-      };
-
-      if (!updateData.title) {
-        return res
-          .status(400)
-          .json({ error: "Tiêu đề banner không được để trống" });
-      }
-
-      if (req.file) {
-        updateData.image = "/uploads/" + req.file.filename;
-      }
-
-      const banner = await Banner.findByIdAndUpdate(req.params.id, updateData, {
-        new: true,
-      });
-
-      res.json({ success: true, banner });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
-
-router.post("/banners/:id/toggle", isAdmin, async (req, res) => {
-  try {
-    const banner = await Banner.findById(req.params.id);
-    if (!banner) {
-      return res.status(404).json({ error: "Không tìm thấy banner" });
-    }
-
-    banner.isActive = !banner.isActive;
-    await banner.save();
-
-    res.json({ success: true, isActive: banner.isActive });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/banners/:id/delete", isAdmin, async (req, res) => {
-  try {
-    await Banner.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
