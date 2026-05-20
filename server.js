@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const Category = require("./models/Category");
 const Notification = require("./models/Notification");
+const { requirePasswordChange } = require("./middleware/auth");
 
 const app = express();
 
@@ -130,6 +131,8 @@ app.use(async (req, res, next) => {
 /* =========================
    ROUTES
 ========================= */
+app.use(requirePasswordChange);
+
 app.use("/", require("./routes/home"));
 app.use("/auth", require("./routes/auth"));
 app.use("/user", require("./routes/user"));

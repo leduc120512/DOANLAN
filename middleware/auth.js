@@ -7,6 +7,31 @@ const isAuthenticated = (req, res, next) => {
   }
 };
 
+const requirePasswordChange = (req, res, next) => {
+  if (!req.session.user || !req.session.user.mustChangePassword) {
+    return next();
+  }
+
+  const allowedPaths = [
+    "/user/profile",
+    "/user/change-password",
+    "/auth/logout",
+  ];
+
+  if (allowedPaths.includes(req.path)) {
+    return next();
+  }
+
+  if (req.headers.accept && req.headers.accept.includes("application/json")) {
+    return res.status(403).json({
+      error: "Vui long doi mat khau moi truoc khi tiep tuc",
+      mustChangePassword: true,
+    });
+  }
+
+  return res.redirect("/user/profile?mustChangePassword=1");
+};
+
 // Kiểm tra admin
 const isAdmin = (req, res, next) => {
   if (req.session.user && req.session.user.role === "admin") {
@@ -35,5 +60,6 @@ const isUser = (req, res, next) => {
 module.exports = {
   isAuthenticated,
   isAdmin,
-  isUser
+  isUser,
+  requirePasswordChange
 };

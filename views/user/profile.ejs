@@ -1,6 +1,12 @@
 <div class="py-8">
     <h1 class="text-4xl font-bold mb-8 text-blue-600">Thông tin cá nhân</h1>
 
+    <% if (typeof mustChangePassword !== 'undefined' && mustChangePassword) { %>
+      <div class="mb-8 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded">
+        Ban dang su dung mat khau tam. Vui long doi mat khau moi truoc khi tiep tuc su dung website.
+      </div>
+    <% } %>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Profile Form -->
       <div class="lg:col-span-2">
@@ -76,7 +82,14 @@
   </div>
 
   <script>
+    const mustChangePassword = <%= typeof mustChangePassword !== 'undefined' && mustChangePassword ? 'true' : 'false' %>;
+
     function updateProfile() {
+      if (mustChangePassword) {
+        notify('Vui long doi mat khau moi truoc khi cap nhat thong tin', 'error');
+        return;
+      }
+
       const fullName = document.getElementById('fullName').value;
       const phone = document.getElementById('phone').value;
       const address = document.getElementById('address').value;
@@ -120,6 +133,9 @@
         if (data.success) {
           notify('Đổi mật khẩu thành công', 'success');
           document.getElementById('passwordForm').reset();
+          if (mustChangePassword) {
+            window.location.href = '/';
+          }
         } else {
           notify(data.error, 'error');
         }

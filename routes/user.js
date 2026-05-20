@@ -9,6 +9,8 @@ router.get("/profile", isAuthenticated, (req, res) => {
   res.render("user/profile", {
     title: "Thông tin cá nhân",
     user: req.session.user,
+    mustChangePassword:
+      req.session.user.mustChangePassword || req.query.mustChangePassword === "1",
   });
 });
 
@@ -146,7 +148,10 @@ router.post("/change-password", isAuthenticated, async (req, res) => {
     }
 
     user.password = newPassword;
+    user.mustChangePassword = false;
     await user.save();
+
+    req.session.user.mustChangePassword = false;
 
     res.json({ success: true, message: "Đổi mật khẩu thành công" });
   } catch (error) {

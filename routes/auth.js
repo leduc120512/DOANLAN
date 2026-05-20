@@ -67,7 +67,12 @@ router.post("/login", async (req, res) => {
       phone: user.phone,
       address: user.address,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
+
+    if (user.mustChangePassword) {
+      return res.redirect("/user/profile?mustChangePassword=1");
+    }
 
     if (user.role === "admin") {
       return res.redirect("/admin");
@@ -111,6 +116,7 @@ router.post("/forgot-password", async (req, res) => {
       user.password = temporaryPassword;
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
+      user.mustChangePassword = true;
       await user.save();
 
       await sendNewPasswordEmail({
@@ -218,6 +224,7 @@ router.post("/reset-password/:token", async (req, res) => {
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+    user.mustChangePassword = false;
     await user.save();
 
     return res.redirect("/auth/login?reset=success");
@@ -300,6 +307,7 @@ router.post("/register", async (req, res) => {
       phone: user.phone,
       address: user.address,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
 
     return res.redirect("/");
